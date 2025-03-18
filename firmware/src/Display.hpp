@@ -3,7 +3,7 @@
 #include <map>
 #include <Arduino.h>
 #include <FastLED.h>
-#include "constants.h"
+#include "constants.hpp"
 
 std::array<byte, 7> SEGMENTS_BLANK = {0, 0, 0, 0, 0, 0, 0};
 
@@ -71,7 +71,8 @@ std::array<byte, 7> SEGMENTS_LOADER[] = {
 class Display
 {
 private:
-    String str[NUM_GRIDS];
+    char str[NUM_GRIDS];
+    byte dots[NUM_GRIDS];
     byte blinks[NUM_GRIDS];
     byte data[NUM_OUTS];
     boolean blinkState = false;
@@ -109,7 +110,8 @@ public:
     {
         for (byte i = 0; i < NUM_GRIDS; i++)
         {
-            str[i] = " ";
+            str[i] = ' ';
+            dots[i] = LOW;
             blinks[i] = LOW;
         }
         for (byte i = 0; i < NUM_OUTS; i++)
@@ -121,11 +123,12 @@ public:
     /**
      * Changes the displayed text, optionnally adding dots at specific positions (1-based)
      */
-    void print(const String &s, const std::vector<byte> &dots = {})
+    void print(const String &str, const std::vector<byte> &dots = {})
     {
         for (byte i = 0; i < NUM_GRIDS; i++)
         {
-            str[i] = s[i] ? s[i] : ' ';
+            this->str[i] = str[i] ? str[i] : ' ';
+            this->dots[i] = LOW;
             blinks[i] = LOW;
         }
 
@@ -133,7 +136,7 @@ public:
         {
             if (dot >= 1 && dot <= NUM_GRIDS)
             {
-                str[dot - 1] += '.';
+                this->dots[dot - 1] = HIGH;
             }
         }
     }
@@ -205,7 +208,7 @@ private:
             return;
         }
 
-        const char s0 = str[index][0];
+        const char s0 = str[index];
 
         if (s0 >= 48 && s0 <= 57)
         {
@@ -224,7 +227,7 @@ private:
             setChar(SEGMENTS_BLANK);
         }
 
-        data[SEGMENTS[7]] = (s0 == '.' || str[index][1] == '.') ? HIGH : LOW;
+        data[SEGMENTS[7]] = (s0 == '.' || dots[index] == HIGH) ? HIGH : LOW;
     }
 
     void setChar(const std::array<byte, 7> &s)

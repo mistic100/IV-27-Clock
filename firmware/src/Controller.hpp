@@ -6,65 +6,12 @@
 #include <FastLED.h>
 #include "Display.hpp"
 #include "MutableDateTime.hpp"
+#include "model.hpp"
 
 boolean ds3231Begin()
 {
     Wire.beginTransmission(0x68);
     return Wire.endTransmission() == ESP_OK;
-}
-
-enum class DisplayMode
-{
-    OFF,
-    STD,
-    MENU,
-    SET_DATE,
-    SET_TIME,
-};
-
-enum class MenuItem
-{
-    // main menu items
-    SET_DATE,
-    SET_TIME,
-    BACK,
-    FIRST_ITEM = SET_DATE,
-    LAST_ITEM = BACK,
-
-    // other items
-    YEAR,
-    MONTH,
-    DAY,
-    HOURS,
-    MINUTES,
-    SECONDS,
-    DONE
-};
-
-MenuItem &operator++(MenuItem &i, int)
-{
-    if (i == MenuItem::LAST_ITEM)
-    {
-        i = MenuItem::FIRST_ITEM;
-    }
-    else
-    {
-        i = static_cast<MenuItem>(static_cast<int>(i) + 1);
-    }
-    return i;
-}
-
-MenuItem &operator--(MenuItem &i, int)
-{
-    if (i == MenuItem::FIRST_ITEM)
-    {
-        i = MenuItem::LAST_ITEM;
-    }
-    else
-    {
-        i = static_cast<MenuItem>(static_cast<int>(i) - 1);
-    }
-    return i;
 }
 
 class Controller
@@ -75,8 +22,8 @@ private:
     DS3231 *ds3231;
     Adafruit_BME280 *bme280;
 
-    DisplayMode mode = DisplayMode::STD;
-    MenuItem item;
+    DisplayMode mode = DisplayMode::TIME;
+    MenuItem item = MenuItem::NONE;
 
     MutableDateTime dateTime;
     float temp;
@@ -120,7 +67,7 @@ public:
                     getDateTime();
                 }
             }
-            if (mode == DisplayMode::STD)
+            if (mode == DisplayMode::TIME)
             {
                 show();
             }
@@ -129,6 +76,11 @@ public:
         EVERY_N_SECONDS(60)
         {
             getTemp();
+
+            if (mode == DisplayMode::DATE)
+            {
+                show();
+            }
         }
     }
 
@@ -137,9 +89,9 @@ public:
         switch (mode)
         {
         case DisplayMode::OFF:
-        case DisplayMode::STD:
-            mode = DisplayMode::MENU;
-            item = MenuItem::SET_DATE;
+        case DisplayMode::TIME:
+        case DisplayMode::DATE:
+            setMode(DisplayMode::MENU, MenuItem::SET_DATE);
             break;
         }
 
@@ -150,29 +102,19 @@ public:
     {
         switch (mode)
         {
-        case DisplayMode::OFF:
-            mode = DisplayMode::STD;
-            display->on();
-            break;
-        case DisplayMode::STD:
-            mode = DisplayMode::OFF;
-            display->off();
-            break;
         case DisplayMode::MENU:
             switch (item)
             {
             case MenuItem::SET_DATE:
                 getDateTime();
-                mode = DisplayMode::SET_DATE;
-                item = MenuItem::YEAR;
+                setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
                 break;
             case MenuItem::SET_TIME:
                 getDateTime();
-                mode = DisplayMode::SET_DATE;
-                item = MenuItem::HOURS;
+                setMode(DisplayMode::SET_DATE, MenuItem::HOURS);
                 break;
             case MenuItem::BACK:
-                mode = DisplayMode::STD;
+                setMode(DisplayMode::TIME);
                 break;
             }
             break;
@@ -180,18 +122,17 @@ public:
             switch (item)
             {
             case MenuItem::YEAR:
-                item = MenuItem::MONTH;
+                setMode(DisplayMode::SET_DATE, MenuItem::MONTH);
                 break;
             case MenuItem::MONTH:
-                item = MenuItem::DAY;
+                setMode(DisplayMode::SET_DATE, MenuItem::DAY);
                 break;
             case MenuItem::DAY:
-                item = MenuItem::DONE;
+                setMode(DisplayMode::SET_DATE, MenuItem::DONE);
                 break;
             case MenuItem::DONE:
                 setDate();
-                mode = DisplayMode::MENU;
-                item = MenuItem::SET_DATE;
+                setMode(DisplayMode::MENU, MenuItem::SET_DATE);
                 break;
             }
             break;
@@ -199,20 +140,27 @@ public:
             switch (item)
             {
             case MenuItem::HOURS:
-                item = MenuItem::MINUTES;
+                setMode(DisplayMode::SET_TIME, MenuItem::MINUTES);
                 break;
             case MenuItem::MINUTES:
-                item = MenuItem::SECONDS;
+                setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
                 break;
             case MenuItem::SECONDS:
-                item = MenuItem::DONE;
+                setMode(DisplayMode::SET_TIME, MenuItem::DONE);
                 break;
             case MenuItem::DONE:
                 setTime();
-                mode = DisplayMode::MENU;
-                item = MenuItem::SET_TIME;
+                setMode(DisplayMode::MENU, MenuItem::SET_TIME);
                 break;
             }
+            break;
+        case DisplayMode::OFF:
+            setMode(DisplayMode::TIME);
+            display->on();
+            break;
+        default:
+            setMode(DisplayMode::OFF);
+            display->off();
             break;
         }
 
@@ -224,7 +172,7 @@ public:
         switch (mode)
         {
         case DisplayMode::MENU:
-            item = item++;
+            item++;
             break;
         case DisplayMode::SET_DATE:
             switch (item)
@@ -253,6 +201,9 @@ public:
                 dateTime.incSeconds();
                 break;
             }
+            break;
+        default:
+            mode++;
             break;
         }
 
@@ -294,24 +245,37 @@ public:
                 break;
             }
             break;
+        default:
+            mode--;
+            break;
         }
 
         show();
     }
 
 private:
+    void setMode(const DisplayMode mode, const MenuItem item = MenuItem::NONE)
+    {
+        this->mode = mode;
+        this->item = item;
+    }
+
     void show()
     {
         static char str[NUM_GRIDS];
         switch (mode)
         {
-        case DisplayMode::STD:
+        case DisplayMode::TIME:
         {
             auto tempFirstDecimal = (int)((temp - (long)temp) * 10 + 0.5);
             sprintf(str, "%02d%02d%02d %2.0f%doC", dateTime.hour(), dateTime.minute(), dateTime.second(), temp, tempFirstDecimal);
             display->print(str, {2, 4, 6, 9});
             break;
         }
+        case DisplayMode::DATE:
+            sprintf(str, " %04d-%02d-%02d ", dateTime.year(), dateTime.month(), dateTime.day());
+            display->print(str);
+            break;
         case DisplayMode::MENU:
             switch (item)
             {
