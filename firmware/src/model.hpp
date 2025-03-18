@@ -7,8 +7,9 @@ enum class DisplayMode
     // main display modes
     TIME,
     DATE,
+    TEMP,
     FIRST_ITEM = TIME,
-    LAST_ITEM = DATE,
+    LAST_ITEM = TEMP,
 
     // other modes
     MENU,

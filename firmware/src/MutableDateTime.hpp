@@ -84,7 +84,7 @@ public:
 
     /**
      * @brief Advance one second, and update minute and hour if necessary
-     * @return boolean true every hour
+     * @return true every hour
      */
     boolean tick()
     {

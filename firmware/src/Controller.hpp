@@ -27,6 +27,7 @@ private:
 
     MutableDateTime dateTime;
     float temp;
+    float humi;
 
 public:
     Controller(Display *display) : display(display)
@@ -51,6 +52,7 @@ public:
         }
 
         ds3231->setClockMode(false);
+        bme280->setTemperatureCompensation(TEMP_OFFSET);
 
         getDateTime();
         getTemp();
@@ -60,7 +62,7 @@ public:
     {
         EVERY_N_SECONDS(1)
         {
-            if (mode != DisplayMode::SET_DATE && mode != DisplayMode::SET_TIME)
+            if (mode != DisplayMode::SET_TIME)
             {
                 if (dateTime.tick())
                 {
@@ -73,10 +75,18 @@ public:
             }
         }
 
+        EVERY_N_SECONDS(10)
+        {
+
+            if (mode == DisplayMode::TEMP)
+            {
+                getTemp();
+                show();
+            }
+        }
+
         EVERY_N_SECONDS(60)
         {
-            getTemp();
-
             if (mode == DisplayMode::DATE)
             {
                 show();
@@ -88,9 +98,35 @@ public:
     {
         switch (mode)
         {
-        case DisplayMode::OFF:
-        case DisplayMode::TIME:
-        case DisplayMode::DATE:
+        case DisplayMode::SET_DATE:
+            switch (item)
+            {
+            case MenuItem::MONTH:
+                setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
+                break;
+            case MenuItem::DAY:
+                setMode(DisplayMode::SET_DATE, MenuItem::MONTH);
+                break;
+            case MenuItem::DONE:
+                setMode(DisplayMode::SET_DATE, MenuItem::DAY);
+                break;
+            }
+            break;
+        case DisplayMode::SET_TIME:
+            switch (item)
+            {
+            case MenuItem::MINUTES:
+                setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
+                break;
+            case MenuItem::SECONDS:
+                setMode(DisplayMode::SET_TIME, MenuItem::MINUTES);
+                break;
+            case MenuItem::DONE:
+                setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
+                break;
+            }
+            break;
+        default:
             setMode(DisplayMode::MENU, MenuItem::SET_DATE);
             break;
         }
@@ -111,7 +147,7 @@ public:
                 break;
             case MenuItem::SET_TIME:
                 getDateTime();
-                setMode(DisplayMode::SET_DATE, MenuItem::HOURS);
+                setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
                 break;
             case MenuItem::BACK:
                 setMode(DisplayMode::TIME);
@@ -267,15 +303,22 @@ private:
         {
         case DisplayMode::TIME:
         {
-            auto tempFirstDecimal = (int)((temp - (long)temp) * 10 + 0.5);
-            sprintf(str, "%02d%02d%02d %2.0f%doC", dateTime.hour(), dateTime.minute(), dateTime.second(), temp, tempFirstDecimal);
-            display->print(str, {2, 4, 6, 9});
+            sprintf(str, "  %02d %02d %02d", dateTime.hour(), dateTime.minute(), dateTime.second());
+            display->print(str, {5, 8});
             break;
         }
         case DisplayMode::DATE:
-            sprintf(str, " %04d-%02d-%02d ", dateTime.year(), dateTime.month(), dateTime.day());
+            sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
             display->print(str);
             break;
+        case DisplayMode::TEMP:
+        {
+            auto tempFirstDecimal = (int)((temp - (long)temp) * 10);
+            auto humiFirstDecimal = (int)((humi - (long)humi) * 10);
+            sprintf(str, "%2.0f%doC   %2.0f%dP", temp, tempFirstDecimal, humi, humiFirstDecimal);
+            display->print(str, {2, 10});
+            break;
+        }
         case DisplayMode::MENU:
             switch (item)
             {
@@ -338,7 +381,8 @@ private:
 
     void getTemp()
     {
-        temp = bme280->readTemperature() + TEMP_OFFSET;
+        temp = bme280->readTemperature();
+        humi = bme280->readHumidity();
     }
 
     void setDate()
