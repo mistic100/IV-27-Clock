@@ -5,6 +5,8 @@
 #define LOAD D8
 #define BLANK D0
 
+#define HOSTNAME "iv27-clock"
+
 #define BLINK_TIME 300
 #define TEMP_OFFSET -2
 

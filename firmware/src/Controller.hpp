@@ -56,6 +56,8 @@ public:
 
         getDateTime();
         getTemp();
+
+        show();
     }
 
     void loop()
