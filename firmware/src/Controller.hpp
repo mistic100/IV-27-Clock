@@ -2,11 +2,14 @@
 
 #include <Arduino.h>
 #include <DS3231.h>
-#include <Adafruit_BME280.h>
 #include <FastLED.h>
 #include "Display.hpp"
 #include "MutableDateTime.hpp"
 #include "model.hpp"
+
+#ifdef BME280_SENSOR
+#include <Adafruit_BME280.h>
+#endif
 
 boolean ds3231Begin()
 {
@@ -20,7 +23,9 @@ private:
     Display *display;
 
     DS3231 *ds3231;
+#ifdef BME280_SENSOR
     Adafruit_BME280 *bme280;
+#endif
 
     DisplayMode mode = DisplayMode::TIME;
     MenuItem item = MenuItem::NONE;
@@ -37,13 +42,6 @@ public:
     void begin()
     {
         this->ds3231 = new DS3231();
-        this->bme280 = new Adafruit_BME280();
-
-        while (!bme280->begin(0x76))
-        {
-            Serial.println("Could not find BME280");
-            delay(1000);
-        }
 
         while (!ds3231Begin())
         {
@@ -52,10 +50,22 @@ public:
         }
 
         ds3231->setClockMode(false);
-        bme280->setTemperatureCompensation(TEMP_OFFSET);
 
         getDateTime();
+
+#ifdef BME280_SENSOR
+        this->bme280 = new Adafruit_BME280();
+
+        while (!bme280->begin(0x76))
+        {
+            Serial.println("Could not find BME280");
+            delay(1000);
+        }
+
+        bme280->setTemperatureCompensation(TEMP_OFFSET);
+
         getTemp();
+#endif
 
         show();
     }
@@ -77,6 +87,7 @@ public:
             }
         }
 
+#ifdef BME280_SENSOR
         EVERY_N_SECONDS(10)
         {
 
@@ -86,6 +97,7 @@ public:
                 show();
             }
         }
+#endif
 
         EVERY_N_SECONDS(60)
         {
@@ -313,6 +325,7 @@ private:
             sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
             display->print(str);
             break;
+#ifdef BME280_SENSOR
         case DisplayMode::TEMP:
         {
             auto tempFirstDecimal = (int)((temp - (long)temp) * 10);
@@ -321,6 +334,7 @@ private:
             display->print(str, {2, 10});
             break;
         }
+#endif
         case DisplayMode::MENU:
             switch (item)
             {
@@ -381,11 +395,13 @@ private:
         dateTime.set(RTClib::now());
     }
 
+#ifdef BME280_SENSOR
     void getTemp()
     {
         temp = bme280->readTemperature();
         humi = bme280->readHumidity();
     }
+#endif
 
     void setDate()
     {

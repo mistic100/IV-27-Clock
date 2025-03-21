@@ -1,5 +1,8 @@
 #pragma once
 
+#define WIFI_OTA
+#define BME280_SENSOR
+
 #define DIN D10
 #define CLK D9
 #define LOAD D8

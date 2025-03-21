@@ -1,6 +1,4 @@
 #include <Arduino.h>
-#include <ArduinoOTA.h>
-#include <WiFi.h>
 #include <ESPRotary.h>
 #include <Button2.h>
 #include <Wire.h>
@@ -8,6 +6,11 @@
 #include "Controller.hpp"
 #include "constants.hpp"
 #include "secrets.hpp"
+
+#ifdef WIFI_OTA
+#include <WiFi.h>
+#include <ArduinoOTA.h>
+#endif
 
 Display display;
 ESPRotary rotaryEncoder;
@@ -18,6 +21,7 @@ void setup()
 {
     Serial.begin(9600);
 
+#ifdef WIFI_OTA
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
@@ -34,7 +38,8 @@ void setup()
     ArduinoOTA.setMdnsEnabled(true);
     ArduinoOTA.setPassword(OTA_PASS.c_str());
     ArduinoOTA.begin();
-    
+#endif
+
     Wire.begin();
 
     display.begin();
@@ -56,7 +61,9 @@ void setup()
 
 void loop()
 {
+#ifdef WIFI_OTA
     ArduinoOTA.handle();
+#endif
     button.loop();
     rotaryEncoder.loop();
     ctrl.loop();

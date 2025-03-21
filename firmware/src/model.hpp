@@ -1,5 +1,7 @@
 #pragma once
 
+#include "constants.hpp"
+
 enum class DisplayMode
 {
     OFF,
@@ -7,9 +9,15 @@ enum class DisplayMode
     // main display modes
     TIME,
     DATE,
+#ifdef BME280_SENSOR
     TEMP,
+#endif
     FIRST_ITEM = TIME,
+#ifdef BME280_SENSOR
     LAST_ITEM = TEMP,
+#else
+    LAST_ITEM = DATE,
+#endif
 
     // other modes
     MENU,
