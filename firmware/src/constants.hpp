@@ -1,7 +1,15 @@
 #pragma once
 
+// enable Wifi OTA
 #define WIFI_OTA
+// enable BME280 ambient sensor
 #define BME280_SENSOR
+// enable message display from Home Assistant
+#define HA_MESSAGE
+
+#if defined(WIFI_OTA) || defined(HA_MESSAGE)
+#define WIFI
+#endif
 
 #define DIN D10
 #define CLK D9
@@ -9,8 +17,9 @@
 #define BLANK D0
 
 #define HOSTNAME "iv27-clock"
-
-#define BLINK_TIME 300
+#define HA_UPDATE_INTERVAL_MS 30000
+#define BLINK_INTERVAL_MS 300
+#define SCROLL_INTERVAL_MS 200
 #define TEMP_OFFSET -2
 
 #define NUM_GRIDS 12

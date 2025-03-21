@@ -7,6 +7,9 @@
 #include "MutableDateTime.hpp"
 #include "model.hpp"
 
+#ifdef HA_MESSAGE
+#include <HaSensor.hpp>
+#endif
 #ifdef BME280_SENSOR
 #include <Adafruit_BME280.h>
 #endif
@@ -21,8 +24,10 @@ class Controller
 {
 private:
     Display *display;
-
     DS3231 *ds3231;
+#ifdef HA_MESSAGE
+    HaSensor *haSensor;
+#endif
 #ifdef BME280_SENSOR
     Adafruit_BME280 *bme280;
 #endif
@@ -30,14 +35,22 @@ private:
     DisplayMode mode = DisplayMode::TIME;
     MenuItem item = MenuItem::NONE;
 
+    uint8_t messageOverrideTime = 0;
+
     MutableDateTime dateTime;
     float temp;
     float humi;
 
 public:
+#ifdef HA_MESSAGE
+    Controller(Display *display, HaSensor *haSensor) : display(display), haSensor(haSensor)
+    {
+    }
+#else
     Controller(Display *display) : display(display)
     {
     }
+#endif
 
     void begin()
     {
@@ -45,7 +58,7 @@ public:
 
         while (!ds3231Begin())
         {
-            Serial.println("Could not find DS3231");
+            log_e("Could not find DS3231");
             delay(1000);
         }
 
@@ -58,7 +71,7 @@ public:
 
         while (!bme280->begin(0x76))
         {
-            Serial.println("Could not find BME280");
+            log_e("Could not find BME280");
             delay(1000);
         }
 
@@ -78,9 +91,34 @@ public:
             {
                 if (dateTime.tick())
                 {
-                    getDateTime();
+                    if (mode != DisplayMode::SET_DATE)
+                    {
+                        getDateTime();
+                    }
                 }
             }
+
+#ifdef HA_MESSAGE
+            if (isMainDisplayMode(mode))
+            {
+                if (messageOverrideTime > 0)
+                {
+                    messageOverrideTime--;
+                }
+
+                if (messageOverrideTime == 0 && !haSensor->getMessage().isEmpty())
+                {
+                    setMode(DisplayMode::MESSAGE);
+                    show();
+                }
+            }
+
+            if (mode == DisplayMode::MESSAGE && haSensor->getMessage().isEmpty())
+            {
+                setMode(DisplayMode::TIME);
+            }
+#endif
+
             if (mode == DisplayMode::TIME)
             {
                 show();
@@ -106,46 +144,6 @@ public:
                 show();
             }
         }
-    }
-
-    void longClick()
-    {
-        switch (mode)
-        {
-        case DisplayMode::SET_DATE:
-            switch (item)
-            {
-            case MenuItem::MONTH:
-                setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
-                break;
-            case MenuItem::DAY:
-                setMode(DisplayMode::SET_DATE, MenuItem::MONTH);
-                break;
-            case MenuItem::DONE:
-                setMode(DisplayMode::SET_DATE, MenuItem::DAY);
-                break;
-            }
-            break;
-        case DisplayMode::SET_TIME:
-            switch (item)
-            {
-            case MenuItem::MINUTES:
-                setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
-                break;
-            case MenuItem::SECONDS:
-                setMode(DisplayMode::SET_TIME, MenuItem::MINUTES);
-                break;
-            case MenuItem::DONE:
-                setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
-                break;
-            }
-            break;
-        default:
-            setMode(DisplayMode::MENU, MenuItem::SET_DATE);
-            break;
-        }
-
-        show();
     }
 
     void click()
@@ -205,12 +203,59 @@ public:
             }
             break;
         case DisplayMode::OFF:
-            setMode(DisplayMode::TIME);
             display->on();
+#ifdef HA_MESSAGE
+            if (!haSensor->getMessage().isEmpty())
+            {
+                setMode(DisplayMode::MESSAGE);
+                break;
+            }
+#endif
+            setMode(DisplayMode::TIME);
             break;
         default:
-            setMode(DisplayMode::OFF);
             display->off();
+            setMode(DisplayMode::OFF);
+            break;
+        }
+
+        show();
+    }
+
+    void longClick()
+    {
+        switch (mode)
+        {
+        case DisplayMode::SET_DATE:
+            switch (item)
+            {
+            case MenuItem::MONTH:
+                setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
+                break;
+            case MenuItem::DAY:
+                setMode(DisplayMode::SET_DATE, MenuItem::MONTH);
+                break;
+            case MenuItem::DONE:
+                setMode(DisplayMode::SET_DATE, MenuItem::DAY);
+                break;
+            }
+            break;
+        case DisplayMode::SET_TIME:
+            switch (item)
+            {
+            case MenuItem::MINUTES:
+                setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
+                break;
+            case MenuItem::SECONDS:
+                setMode(DisplayMode::SET_TIME, MenuItem::MINUTES);
+                break;
+            case MenuItem::DONE:
+                setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
+                break;
+            }
+            break;
+        default:
+            setMode(DisplayMode::MENU, MenuItem::SET_DATE);
             break;
         }
 
@@ -252,8 +297,14 @@ public:
                 break;
             }
             break;
+        case DisplayMode::MESSAGE:
+            setMode(DisplayMode::TIME);
+            break;
         default:
-            mode++;
+            if (isMainDisplayMode(mode))
+            {
+                setMode(++mode);
+            }
             break;
         }
 
@@ -295,8 +346,14 @@ public:
                 break;
             }
             break;
+        case DisplayMode::MESSAGE:
+            setMode(DisplayMode::TIME);
+            break;
         default:
-            mode--;
+            if (isMainDisplayMode(mode))
+            {
+                setMode(--mode);
+            }
             break;
         }
 
@@ -308,6 +365,11 @@ private:
     {
         this->mode = mode;
         this->item = item;
+
+        if (mode != DisplayMode::MESSAGE)
+        {
+            messageOverrideTime = 10;
+        }
     }
 
     void show()
@@ -315,6 +377,15 @@ private:
         static char str[NUM_GRIDS];
         switch (mode)
         {
+#ifdef HA_MESSAGE
+        case DisplayMode::MESSAGE:
+            display->print(haSensor->getMessage());
+            if (haSensor->getMessage().length() <= NUM_GRIDS)
+            {
+                display->blinkAll();
+            }
+            break;
+#endif
         case DisplayMode::TIME:
         {
             sprintf(str, "  %02d %02d %02d", dateTime.hour(), dateTime.minute(), dateTime.second());
@@ -330,7 +401,7 @@ private:
         {
             auto tempFirstDecimal = (int)((temp - (long)temp) * 10);
             auto humiFirstDecimal = (int)((humi - (long)humi) * 10);
-            sprintf(str, "%2.0f%doC   %2.0f%dP", temp, tempFirstDecimal, humi, humiFirstDecimal);
+            sprintf(str, "%2.0f%d%%C   %2.0f%dP", temp, tempFirstDecimal, humi, humiFirstDecimal);
             display->print(str, {2, 10});
             break;
         }

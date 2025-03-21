@@ -5,6 +5,7 @@
 enum class DisplayMode
 {
     OFF,
+    MESSAGE,
 
     // main display modes
     TIME,
@@ -25,7 +26,12 @@ enum class DisplayMode
     SET_TIME,
 };
 
-DisplayMode &operator++(DisplayMode &i, int)
+bool isMainDisplayMode(const DisplayMode &i)
+{
+    return static_cast<int>(i) >= static_cast<int>(DisplayMode::FIRST_ITEM) && static_cast<int>(i) <= static_cast<int>(DisplayMode::LAST_ITEM);
+}
+
+DisplayMode &operator++(DisplayMode &i)
 {
     if (i == DisplayMode::LAST_ITEM)
     {
@@ -38,7 +44,7 @@ DisplayMode &operator++(DisplayMode &i, int)
     return i;
 }
 
-DisplayMode &operator--(DisplayMode &i, int)
+DisplayMode &operator--(DisplayMode &i)
 {
     if (i == DisplayMode::FIRST_ITEM)
     {

@@ -7,32 +7,45 @@
 #include "constants.hpp"
 #include "secrets.hpp"
 
-#ifdef WIFI_OTA
+#ifdef WIFI
 #include <WiFi.h>
+static const char *TAG_WIFI = "WIFI";
+#endif
+#ifdef WIFI_OTA
 #include <ArduinoOTA.h>
+#endif
+#ifdef HA_MESSAGE
+#include "HaSensor.hpp"
 #endif
 
 Display display;
 ESPRotary rotaryEncoder;
 Button2 button;
+#ifdef HA_MESSAGE
+HaSensor haSensor;
+Controller ctrl(&display, &haSensor);
+#else
 Controller ctrl(&display);
+#endif
 
 void setup()
 {
-    Serial.begin(9600);
+    Serial.begin(115200);
 
-#ifdef WIFI_OTA
+#ifdef WIFI
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
     while (WiFi.status() != WL_CONNECTED)
     {
-        Serial.println("Wait Wifi");
+        ESP_LOGI(TAG_WIFI, "Wait Wifi");
         delay(500);
     }
 
-    Serial.println(WiFi.localIP());
+    ESP_LOGI(TAG_WIFI, "%s", WiFi.localIP().toString());
+#endif
 
+#ifdef WIFI_OTA
     ArduinoOTA.setRebootOnSuccess(true);
     ArduinoOTA.setHostname(HOSTNAME);
     ArduinoOTA.setMdnsEnabled(true);
@@ -64,8 +77,16 @@ void loop()
 #ifdef WIFI_OTA
     ArduinoOTA.handle();
 #endif
+
     button.loop();
+
     rotaryEncoder.loop();
+
+#ifdef HA_MESSAGE
+    haSensor.loop();
+#endif
+
     ctrl.loop();
+
     display.loop();
 }

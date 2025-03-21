@@ -55,7 +55,7 @@ std::map<char, std::array<byte, 7>> SEGMENTS_SYM = {
     {'-', {{0, 0, 0, 0, 0, 0, 1}}},
     {'_', {{0, 0, 0, 1, 0, 0, 0}}},
     {'/', {{0, 1, 0, 0, 1, 0, 1}}},
-    {'o', {{1, 1, 0, 0, 0, 1, 1}}}, // °
+    {'%', {{1, 1, 0, 0, 0, 1, 1}}}, // °
 };
 
 std::array<byte, 7> SEGMENTS_LOADER[] = {
@@ -72,11 +72,15 @@ std::array<byte, 7> SEGMENTS_LOADER[] = {
 class Display
 {
 private:
-    char str[NUM_GRIDS];
+    String str;
+
+    char chars[NUM_GRIDS];
     byte dots[NUM_GRIDS];
     byte blinks[NUM_GRIDS];
     byte data[NUM_OUTS];
-    boolean blinkState = false;
+
+    bool blinkState = false;
+    int scrollOffset = 0;
 
 public:
     Display()
@@ -109,9 +113,13 @@ public:
 
     void clear()
     {
+        scrollOffset = 0;
+
+        str.clear();
+
         for (byte i = 0; i < NUM_GRIDS; i++)
         {
-            str[i] = ' ';
+            chars[i] = ' ';
             dots[i] = LOW;
             blinks[i] = LOW;
         }
@@ -123,21 +131,30 @@ public:
 
     /**
      * Changes the displayed text, optionnally adding dots at specific positions (1-based)
+     * If "str" is longer than NUM_GRIDS it will perform a scroll animation and ignore "dots"
      */
     void print(const String &str, const std::vector<byte> &dots = {})
     {
-        for (byte i = 0; i < NUM_GRIDS; i++)
-        {
-            this->str[i] = str[i] ? str[i] : ' ';
-            this->dots[i] = LOW;
-            blinks[i] = LOW;
-        }
+        clear();
 
-        for (const auto &dot : dots)
+        if (str.length() > NUM_GRIDS)
         {
-            if (dot >= 1 && dot <= NUM_GRIDS)
+            this->str = str;
+            scrollOffset = -NUM_GRIDS;
+        }
+        else
+        {
+            for (byte i = 0; i < NUM_GRIDS; i++)
             {
-                this->dots[dot - 1] = HIGH;
+                this->chars[i] = str[i] ? str[i] : ' ';
+            }
+
+            for (const auto &dot : dots)
+            {
+                if (dot >= 1 && dot <= NUM_GRIDS)
+                {
+                    this->dots[dot - 1] = HIGH;
+                }
             }
         }
     }
@@ -156,11 +173,24 @@ public:
         }
     }
 
+    void blinkAll()
+    {
+        for (byte i = 0; i < NUM_GRIDS; i++)
+        {
+            blinks[i] = HIGH;
+        }
+    }
+
     void loop()
     {
-        EVERY_N_MILLIS(BLINK_TIME)
+        EVERY_N_MILLIS(BLINK_INTERVAL_MS)
         {
-            blinkState = !blinkState;
+            blink();
+        }
+
+        EVERY_N_MILLIS(SCROLL_INTERVAL_MS)
+        {
+            scroll();
         }
 
         // for each character
@@ -197,6 +227,29 @@ private:
         digitalWrite(LOAD, LOW);
     }
 
+    void blink()
+    {
+        blinkState = !blinkState;
+    }
+
+    void scroll()
+    {
+        if (!str.isEmpty())
+        {
+            for (byte i = 0; i < NUM_GRIDS; i++)
+            {
+                auto idx = scrollOffset + i;
+                chars[i] = idx < 0 || idx >= str.length() ? ' ' : str[idx];
+            }
+
+            scrollOffset++;
+            if (scrollOffset >= (int)str.length())
+            {
+                scrollOffset = -NUM_GRIDS;
+            }
+        }
+    }
+
     /**
      * Updates `data` 8 segments for current character
      */
@@ -209,7 +262,7 @@ private:
             return;
         }
 
-        const char s0 = str[index];
+        const char s0 = chars[index];
 
         if (s0 >= 48 && s0 <= 57)
         {
@@ -218,6 +271,10 @@ private:
         else if (s0 >= 65 && s0 <= 90)
         {
             setChar(SEGMENTS_ALPHA[s0 - 65]);
+        }
+        else if (s0 >= 97 && s0 <= 122)
+        {
+            setChar(SEGMENTS_ALPHA[s0 - 97]);
         }
         else if (SEGMENTS_SYM.contains(s0))
         {

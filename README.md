@@ -2,12 +2,20 @@
 
 > Work in progress
 
+## Features
+
+- Current time
+- Current date
+- Temperature + Humidity
+- Select displayed info with a rotary knob
+- Display simple messages from Home Assistant
+
 ## Bill of materials
 
 - IV-27 VFD tube
 - MAX6921 serial-interface
 - SOP28 to DIP28 adapter
-- Seeed Studio Xiao ESP32C3 µC (or SAMD21)
+- Seeed Studio Xiao ESP32C3 MCU
 - BME280 ambient sensor
 - DS3231 RTC
 - MT3608 boost converter (25V)
@@ -30,6 +38,56 @@ In date/time edit:
 - rotate left or right: change value
 - single click: next element
 - long click: previous element
+
+## Configuration
+
+### Home Assistant
+
+Add a custom sensor whose state value is the message to display on the clock.
+
+**Example (extracting data from a todo list):**
+```yaml
+template:
+  - trigger:
+      - platform: state
+        entity_id: todo.my_list
+    action:
+      - service: todo.get_items
+        data:
+          status: needs_action
+        target:
+          entity_id: todo.my_list
+        response_variable: items
+    sensor:
+      - unique_id: todo_message
+        state: >
+            {% set tdate = (now().date() + timedelta(days=7)) | string %}
+            {{ items['todo.my_list']['items'] 
+				| selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
+				| map(attribute='summary') 
+				| list | join('|') | truncate(255) }}
+```
+
+### Firmware
+
+Copy `secrets.tpl.h` into `secrets.h` and fill the values.
+
+- `HA_TOKEN`: go to your HA profile page, then Security, and create a new Long lived token at the bottom of the page (keep the `Bearer ` prefix)
+- `HA_URL`: fill in your HA hostname and the id of the sensor created above
+- `OTA_PASS`: choose a password to secure the Wifi OTA update
+
+Copy `upload_params.tpl.ini` into `upload_params.ini` and fill the OTA password.
+
+----
+
+In `constants.h` you can also configure:
+
+- `WIFI_OTA`: comment to disable the Wifi OTA
+- `BME280_SENSOR`: comment to disable the ambient sensor
+- `HA_MESSAGE`: comment to disable the message display from HA
+- `TEMP_OFFSET`: applies an offset to the measured temperature
+- `DIN`, `CLK`, `LOAD`, `BLANK` MCU pins to the MAX6921
+- `GRID`, `SEGMENTS`: MAX6921 pins to the display
 
 ## Resources
 
