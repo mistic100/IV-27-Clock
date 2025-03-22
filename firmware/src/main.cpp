@@ -14,19 +14,11 @@ static const char *TAG_WIFI = "WIFI";
 #ifdef WIFI_OTA
 #include <ArduinoOTA.h>
 #endif
-#ifdef HA_MESSAGE
-#include "HaSensor.hpp"
-#endif
 
 Display display;
 ESPRotary rotaryEncoder;
 Button2 button;
-#ifdef HA_MESSAGE
-HaSensor haSensor;
-Controller ctrl(&display, &haSensor);
-#else
 Controller ctrl(&display);
-#endif
 
 void setup()
 {
@@ -54,18 +46,15 @@ void setup()
 #endif
 
     Wire.begin();
-
     display.begin();
-
     ctrl.begin();
+    button.begin(ENCODER_SW);
+    rotaryEncoder.begin(ENCODER_A, ENCODER_B, 4);
 
-    button.begin(D3);
     button.setClickHandler([](Button2 &btn)
                            { ctrl.click(); });
     button.setLongClickHandler([](Button2 &btn)
                                { ctrl.longClick(); });
-
-    rotaryEncoder.begin(D1, D2, 4);
     rotaryEncoder.setLeftRotationHandler([](ESPRotary &r)
                                          { ctrl.up(); });
     rotaryEncoder.setRightRotationHandler([](ESPRotary &r)
@@ -77,16 +66,8 @@ void loop()
 #ifdef WIFI_OTA
     ArduinoOTA.handle();
 #endif
-
     button.loop();
-
     rotaryEncoder.loop();
-
-#ifdef HA_MESSAGE
-    haSensor.loop();
-#endif
-
     ctrl.loop();
-
     display.loop();
 }

@@ -18,24 +18,8 @@ private:
     HTTPClient http;
     JsonDocument doc;
 
-    String message;
-
 public:
-    void loop()
-    {
-        EVERY_N_MILLIS(HA_UPDATE_INTERVAL_MS)
-        {
-            updateData();
-        }
-    }
-
-    const String &getMessage() const
-    {
-        return message;
-    }
-
-private:
-    void updateData()
+    const String getMessage()
     {
         ESP_LOGI(TAG, "Update");
 
@@ -47,10 +31,12 @@ private:
         doc.clear();
         deserializeJson(doc, http.getStream());
 
-        message = doc["state"].as<String>();
+        String message = doc["state"].as<String>();
 
         http.end();
 
         ESP_LOGI(TAG, "Message: %s", message.c_str());
+
+        return message;
     }
 };

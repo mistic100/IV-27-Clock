@@ -78,7 +78,7 @@ enum class MenuItem
     DONE
 };
 
-MenuItem &operator++(MenuItem &i, int)
+MenuItem &operator++(MenuItem &i)
 {
     if (i == MenuItem::LAST_ITEM)
     {
@@ -91,7 +91,7 @@ MenuItem &operator++(MenuItem &i, int)
     return i;
 }
 
-MenuItem &operator--(MenuItem &i, int)
+MenuItem &operator--(MenuItem &i)
 {
     if (i == MenuItem::FIRST_ITEM)
     {

@@ -86,7 +86,8 @@ In `constants.h` you can also configure:
 - `BME280_SENSOR`: comment to disable the ambient sensor
 - `HA_MESSAGE`: comment to disable the message display from HA
 - `TEMP_OFFSET`: applies an offset to the measured temperature
-- `DIN`, `CLK`, `LOAD`, `BLANK` MCU pins to the MAX6921
+- `DIN`, `CLK`, `LOAD`, `BLANK`: MCU pins to the MAX6921
+- `ENCODER_A`, `ENCODER_B`, `ENCODER_SW`: MCU pins to the rotary encoder
 - `GRID`, `SEGMENTS`: MAX6921 pins to the display
 
 ## Resources

@@ -16,8 +16,12 @@
 #define LOAD D8
 #define BLANK D0
 
+#define ENCODER_A D1
+#define ENCODER_B D2
+#define ENCODER_SW D3
+
 #define HOSTNAME "iv27-clock"
-#define HA_UPDATE_INTERVAL_MS 30000
+#define HA_UPDATE_INTERVAL_S 30
 #define BLINK_INTERVAL_MS 300
 #define SCROLL_INTERVAL_MS 200
 #define TEMP_OFFSET -2

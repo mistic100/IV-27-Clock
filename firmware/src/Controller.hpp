@@ -7,11 +7,11 @@
 #include "MutableDateTime.hpp"
 #include "model.hpp"
 
-#ifdef HA_MESSAGE
-#include <HaSensor.hpp>
-#endif
 #ifdef BME280_SENSOR
 #include <Adafruit_BME280.h>
+#endif
+#ifdef HA_MESSAGE
+#include "HaSensor.hpp"
 #endif
 
 boolean ds3231Begin()
@@ -25,11 +25,11 @@ class Controller
 private:
     Display *display;
     DS3231 *ds3231;
-#ifdef HA_MESSAGE
-    HaSensor *haSensor;
-#endif
 #ifdef BME280_SENSOR
     Adafruit_BME280 *bme280;
+#endif
+#ifdef HA_MESSAGE
+    HaSensor *haSensor;
 #endif
 
     DisplayMode mode = DisplayMode::TIME;
@@ -40,21 +40,16 @@ private:
     MutableDateTime dateTime;
     float temp;
     float humi;
+    String message;
 
 public:
-#ifdef HA_MESSAGE
-    Controller(Display *display, HaSensor *haSensor) : display(display), haSensor(haSensor)
-    {
-    }
-#else
     Controller(Display *display) : display(display)
     {
     }
-#endif
 
     void begin()
     {
-        this->ds3231 = new DS3231();
+        ds3231 = new DS3231();
 
         while (!ds3231Begin())
         {
@@ -63,11 +58,10 @@ public:
         }
 
         ds3231->setClockMode(false);
-
         getDateTime();
 
 #ifdef BME280_SENSOR
-        this->bme280 = new Adafruit_BME280();
+        bme280 = new Adafruit_BME280();
 
         while (!bme280->begin(0x76))
         {
@@ -76,15 +70,26 @@ public:
         }
 
         bme280->setTemperatureCompensation(TEMP_OFFSET);
-
         getTemp();
 #endif
 
-        show();
+#ifdef HA_MESSAGE
+        haSensor = new HaSensor();
+
+        getMessage();
+#endif
     }
 
     void loop()
     {
+
+#ifdef HA_MESSAGE
+        EVERY_N_SECONDS(HA_UPDATE_INTERVAL_S)
+        {
+            getMessage();
+        }
+#endif
+
         EVERY_N_SECONDS(1)
         {
             if (mode != DisplayMode::SET_TIME)
@@ -106,14 +111,14 @@ public:
                     messageOverrideTime--;
                 }
 
-                if (messageOverrideTime == 0 && !haSensor->getMessage().isEmpty())
+                if (messageOverrideTime == 0 && !message.isEmpty())
                 {
                     setMode(DisplayMode::MESSAGE);
                     show();
                 }
             }
 
-            if (mode == DisplayMode::MESSAGE && haSensor->getMessage().isEmpty())
+            if (mode == DisplayMode::MESSAGE && message.isEmpty())
             {
                 setMode(DisplayMode::TIME);
             }
@@ -205,7 +210,7 @@ public:
         case DisplayMode::OFF:
             display->on();
 #ifdef HA_MESSAGE
-            if (!haSensor->getMessage().isEmpty())
+            if (!message.isEmpty())
             {
                 setMode(DisplayMode::MESSAGE);
                 break;
@@ -267,7 +272,7 @@ public:
         switch (mode)
         {
         case DisplayMode::MENU:
-            item++;
+            setMode(DisplayMode::MENU, ++item);
             break;
         case DisplayMode::SET_DATE:
             switch (item)
@@ -316,7 +321,7 @@ public:
         switch (mode)
         {
         case DisplayMode::MENU:
-            item--;
+            setMode(DisplayMode::MENU, --item);
             break;
         case DisplayMode::SET_DATE:
             switch (item)
@@ -366,7 +371,7 @@ private:
         this->mode = mode;
         this->item = item;
 
-        if (mode != DisplayMode::MESSAGE)
+        if (mode != DisplayMode::MESSAGE && mode != DisplayMode::OFF)
         {
             messageOverrideTime = 10;
         }
@@ -375,23 +380,22 @@ private:
     void show()
     {
         static char str[NUM_GRIDS];
+
         switch (mode)
         {
 #ifdef HA_MESSAGE
         case DisplayMode::MESSAGE:
-            display->print(haSensor->getMessage());
-            if (haSensor->getMessage().length() <= NUM_GRIDS)
+            display->print(message);
+            if (message.length() <= NUM_GRIDS)
             {
                 display->blinkAll();
             }
             break;
 #endif
         case DisplayMode::TIME:
-        {
             sprintf(str, "  %02d %02d %02d", dateTime.hour(), dateTime.minute(), dateTime.second());
             display->print(str, {5, 8});
             break;
-        }
         case DisplayMode::DATE:
             sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
             display->print(str);
@@ -471,6 +475,13 @@ private:
     {
         temp = bme280->readTemperature();
         humi = bme280->readHumidity();
+    }
+#endif
+
+#ifdef HA_MESSAGE
+    void getMessage()
+    {
+        message = haSensor->getMessage();
     }
 #endif
 
