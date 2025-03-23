@@ -1,23 +1,104 @@
 #pragma once
 
 #include <DS3231.h>
+#include "constants.hpp"
+
+#ifdef USE_NTP
+#include <time.h>
+#endif
+
+#ifdef USE_RTC
+boolean ds3231Begin()
+{
+    Wire.beginTransmission(0x68);
+    return Wire.endTransmission() == ESP_OK;
+}
+#endif
+
+static const char *TAG_DT = "DATETIME";
 
 class MutableDateTime : public DateTime
 {
+private:
+#ifdef USE_RTC
+    DS3231 *ds3231;
+#endif
+
 public:
     MutableDateTime()
     {
     }
 
-    void set(const DateTime &dt)
+    void init()
     {
+#ifdef USE_NTP
+        ESP_LOGI(TAG_DT, "Init NTP");
+        configTzTime(TIMEZONE, "pool.ntp.org");
+#endif
+#ifdef USE_RTC
+        ESP_LOGI(TAG_DT, "Init RTC");
+        ds3231 = new DS3231();
+
+        while (!ds3231Begin())
+        {
+            log_e("Could not find DS3231");
+            delay(1000);
+        }
+
+        ds3231->setClockMode(false);
+#endif
+
+        update();
+    }
+
+    void update()
+    {
+        ESP_LOGI(TAG_DT, "Update");
+
+#ifdef USE_NTP
+        static struct tm timeinfo;
+        if (!getLocalTime(&timeinfo))
+        {
+            ESP_LOGE(TAG_DT, "Failed to obtain time");
+            return;
+        }
+
+        yOff = timeinfo.tm_year - 100;
+        m = timeinfo.tm_mon + 1;
+        d = timeinfo.tm_mday;
+        hh = timeinfo.tm_hour;
+        mm = timeinfo.tm_min;
+        ss = timeinfo.tm_sec;
+#endif
+#ifdef USE_RTC
+        DateTime dt = RTClib::now();
         yOff = dt.year() - 2000;
         m = dt.month();
         d = dt.day();
         hh = dt.hour();
         mm = dt.minute();
         ss = dt.second();
+#endif
+
+        ESP_LOGI(TAG_DT, "Date: %d-%d-%d", yOff, m, d);
+        ESP_LOGI(TAG_DT, "Time: %d:%d:%d", hh, mm, ss);
     }
+
+#ifdef USE_RTC
+    void persistDate()
+    {
+        ds3231->setYear(yOff);
+        ds3231->setMonth(m);
+        ds3231->setDate(d);
+    }
+
+    void persistTime()
+    {
+        ds3231->setHour(hh);
+        ds3231->setMinute(mm);
+        ds3231->setSecond(ss);
+    }
+#endif
 
     void incYear()
     {

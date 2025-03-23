@@ -10,11 +10,9 @@ enum class DisplayMode
     // main display modes
     TIME,
     DATE,
-#ifdef BME280_SENSOR
     TEMP,
-#endif
     FIRST_ITEM = TIME,
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
     LAST_ITEM = TEMP,
 #else
     LAST_ITEM = DATE,
@@ -65,7 +63,11 @@ enum class MenuItem
     SET_DATE,
     SET_TIME,
     BACK,
+#ifdef USE_RTC
     FIRST_ITEM = SET_DATE,
+#else
+    FIRST_ITEM = BACK,
+#endif
     LAST_ITEM = BACK,
 
     // other items

@@ -1,34 +1,26 @@
 #pragma once
 
 #include <Arduino.h>
-#include <DS3231.h>
 #include <FastLED.h>
 #include "Display.hpp"
 #include "MutableDateTime.hpp"
 #include "model.hpp"
 
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
 #include <Adafruit_BME280.h>
 #endif
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
 #include "HaSensor.hpp"
 #endif
-
-boolean ds3231Begin()
-{
-    Wire.beginTransmission(0x68);
-    return Wire.endTransmission() == ESP_OK;
-}
 
 class Controller
 {
 private:
     Display *display;
-    DS3231 *ds3231;
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
     Adafruit_BME280 *bme280;
 #endif
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
     HaSensor *haSensor;
 #endif
 
@@ -49,18 +41,9 @@ public:
 
     void begin()
     {
-        ds3231 = new DS3231();
+        dateTime.init();
 
-        while (!ds3231Begin())
-        {
-            log_e("Could not find DS3231");
-            delay(1000);
-        }
-
-        ds3231->setClockMode(false);
-        getDateTime();
-
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
         bme280 = new Adafruit_BME280();
 
         while (!bme280->begin(0x76))
@@ -73,7 +56,7 @@ public:
         getTemp();
 #endif
 
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
         haSensor = new HaSensor();
 
         getMessage();
@@ -83,7 +66,7 @@ public:
     void loop()
     {
 
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
         EVERY_N_SECONDS(HA_UPDATE_INTERVAL_S)
         {
             getMessage();
@@ -98,12 +81,12 @@ public:
                 {
                     if (mode != DisplayMode::SET_DATE)
                     {
-                        getDateTime();
+                        dateTime.update();
                     }
                 }
             }
 
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
             if (isMainDisplayMode(mode))
             {
                 if (messageOverrideTime > 0)
@@ -130,8 +113,8 @@ public:
             }
         }
 
-#ifdef BME280_SENSOR
-        EVERY_N_SECONDS(10)
+#ifdef USE_BME280_SENSOR
+        EVERY_N_SECONDS(TEMP_UPDATE_INTERVAL_S)
         {
 
             if (mode == DisplayMode::TEMP)
@@ -158,19 +141,22 @@ public:
         case DisplayMode::MENU:
             switch (item)
             {
+#ifdef USE_RTC
             case MenuItem::SET_DATE:
-                getDateTime();
+                dateTime.update();
                 setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
                 break;
             case MenuItem::SET_TIME:
-                getDateTime();
+                dateTime.update();
                 setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
                 break;
+#endif
             case MenuItem::BACK:
                 setMode(DisplayMode::TIME);
                 break;
             }
             break;
+#ifdef USE_RTC
         case DisplayMode::SET_DATE:
             switch (item)
             {
@@ -184,7 +170,7 @@ public:
                 setMode(DisplayMode::SET_DATE, MenuItem::DONE);
                 break;
             case MenuItem::DONE:
-                setDate();
+                dateTime.persistDate();
                 setMode(DisplayMode::MENU, MenuItem::SET_DATE);
                 break;
             }
@@ -202,14 +188,15 @@ public:
                 setMode(DisplayMode::SET_TIME, MenuItem::DONE);
                 break;
             case MenuItem::DONE:
-                setTime();
+                dateTime.persistTime();
                 setMode(DisplayMode::MENU, MenuItem::SET_TIME);
                 break;
             }
             break;
+#endif
         case DisplayMode::OFF:
             display->on();
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
             if (!message.isEmpty())
             {
                 setMode(DisplayMode::MESSAGE);
@@ -231,6 +218,7 @@ public:
     {
         switch (mode)
         {
+#ifdef USE_RTC
         case DisplayMode::SET_DATE:
             switch (item)
             {
@@ -259,8 +247,9 @@ public:
                 break;
             }
             break;
+#endif
         default:
-            setMode(DisplayMode::MENU, MenuItem::SET_DATE);
+            setMode(DisplayMode::MENU);
             break;
         }
 
@@ -274,6 +263,7 @@ public:
         case DisplayMode::MENU:
             setMode(DisplayMode::MENU, ++item);
             break;
+#ifdef USE_RTC
         case DisplayMode::SET_DATE:
             switch (item)
             {
@@ -302,6 +292,7 @@ public:
                 break;
             }
             break;
+#endif
         case DisplayMode::MESSAGE:
             setMode(DisplayMode::TIME);
             break;
@@ -323,6 +314,7 @@ public:
         case DisplayMode::MENU:
             setMode(DisplayMode::MENU, --item);
             break;
+#ifdef USE_RTC
         case DisplayMode::SET_DATE:
             switch (item)
             {
@@ -351,6 +343,7 @@ public:
                 break;
             }
             break;
+#endif
         case DisplayMode::MESSAGE:
             setMode(DisplayMode::TIME);
             break;
@@ -369,7 +362,15 @@ private:
     void setMode(const DisplayMode mode, const MenuItem item = MenuItem::NONE)
     {
         this->mode = mode;
-        this->item = item;
+
+        if (mode == DisplayMode::MENU)
+        {
+            this->item = item != MenuItem::NONE ? item : MenuItem::FIRST_ITEM;
+        }
+        else
+        {
+            this->item = item;
+        }
 
         if (mode != DisplayMode::MESSAGE && mode != DisplayMode::OFF)
         {
@@ -383,7 +384,7 @@ private:
 
         switch (mode)
         {
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
         case DisplayMode::MESSAGE:
             display->print(message);
             if (message.length() <= NUM_GRIDS)
@@ -400,12 +401,12 @@ private:
             sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
             display->print(str);
             break;
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
         case DisplayMode::TEMP:
         {
             auto tempFirstDecimal = (int)((temp - (long)temp) * 10);
             auto humiFirstDecimal = (int)((humi - (long)humi) * 10);
-            sprintf(str, "%2.0f%d%%C   %2.0f%dP", temp, tempFirstDecimal, humi, humiFirstDecimal);
+            sprintf(str, "%2.0f%d*C   %2.0f%dP", temp, tempFirstDecimal, humi, humiFirstDecimal);
             display->print(str, {2, 10});
             break;
         }
@@ -413,17 +414,20 @@ private:
         case DisplayMode::MENU:
             switch (item)
             {
+#ifdef USE_RTC
             case MenuItem::SET_DATE:
                 display->print("SET DATE");
                 break;
             case MenuItem::SET_TIME:
                 display->print("SET TIME");
                 break;
+#endif
             case MenuItem::BACK:
                 display->print("BACK");
                 break;
             }
             break;
+#ifdef USE_RTC
         case DisplayMode::SET_DATE:
             sprintf(str, "%02d-%02d-%02d  OK", dateTime.year() - 2000, dateTime.month(), dateTime.day());
             display->print(str);
@@ -462,15 +466,11 @@ private:
                 break;
             }
             break;
+#endif
         }
     }
 
-    void getDateTime()
-    {
-        dateTime.set(RTClib::now());
-    }
-
-#ifdef BME280_SENSOR
+#ifdef USE_BME280_SENSOR
     void getTemp()
     {
         temp = bme280->readTemperature();
@@ -478,24 +478,10 @@ private:
     }
 #endif
 
-#ifdef HA_MESSAGE
+#ifdef USE_HA_MESSAGE
     void getMessage()
     {
         message = haSensor->getMessage();
     }
 #endif
-
-    void setDate()
-    {
-        ds3231->setYear(dateTime.year() - 2000);
-        ds3231->setMonth(dateTime.month());
-        ds3231->setDate(dateTime.day());
-    }
-
-    void setTime()
-    {
-        ds3231->setHour(dateTime.hour());
-        ds3231->setMinute(dateTime.minute());
-        ds3231->setSecond(dateTime.second());
-    }
 };

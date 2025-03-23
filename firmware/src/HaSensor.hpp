@@ -9,7 +9,7 @@
 #include "model.hpp"
 #include "secrets.hpp"
 
-static const char *TAG = "SENSORS";
+static const char *TAG_HA = "HA";
 
 class HaSensor
 {
@@ -21,7 +21,7 @@ private:
 public:
     const String getMessage()
     {
-        ESP_LOGI(TAG, "Update");
+        ESP_LOGI(TAG_HA, "Update");
 
         http.useHTTP10(true);
         http.begin(client, HA_URL);
@@ -35,7 +35,7 @@ public:
 
         http.end();
 
-        ESP_LOGI(TAG, "Message: %s", message.c_str());
+        ESP_LOGI(TAG_HA, "Message: %s", message.c_str());
 
         return message;
     }

@@ -4,8 +4,7 @@
 
 ## Features
 
-- Current time
-- Current date
+- Current time/date (NTP or RTC)
 - Temperature + Humidity
 - Select displayed info with a rotary knob
 - Display simple messages from Home Assistant
@@ -16,8 +15,8 @@
 - MAX6921 serial-interface
 - SOP28 to DIP28 adapter
 - Seeed Studio Xiao ESP32C3 MCU
-- BME280 ambient sensor
-- DS3231 RTC
+- (optional) BME280 ambient sensor
+- (optional) DS3231 RTC
 - MT3608 boost converter (25V)
 - Mini560 or LM2596 buck converter (3.3V)
 - rotary encoder with push action
@@ -34,7 +33,7 @@ In menu mode:
 - rotate left or right: select menu item
 - single click: select menu item
 
-In date/time edit:
+In date/time edit (RTC only):
 - rotate left or right: change value
 - single click: next element
 - long click: previous element
@@ -80,11 +79,13 @@ Copy `upload_params.tpl.ini` into `upload_params.ini` and fill the OTA password.
 
 ----
 
-In `constants.h` you can also configure:
+In `constants.hpp` you can also configure:
 
-- `WIFI_OTA`: comment to disable the Wifi OTA
-- `BME280_SENSOR`: comment to disable the ambient sensor
-- `HA_MESSAGE`: comment to disable the message display from HA
+- `USE_NTP`: use Network Time Prototal, comment to use RTC instead
+- `USE_WIFI_OTA`: comment to disable the Wifi OTA
+- `USE_BME280_SENSOR`: comment to disable the ambient sensor
+- `USE_HA_MESSAGE`: comment to disable the message display from HA
+- `TIMEZONE`: timezone for NTP ([check available TZ](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h))
 - `TEMP_OFFSET`: applies an offset to the measured temperature
 - `DIN`, `CLK`, `LOAD`, `BLANK`: MCU pins to the MAX6921
 - `ENCODER_A`, `ENCODER_B`, `ENCODER_SW`: MCU pins to the rotary encoder
