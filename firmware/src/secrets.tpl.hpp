@@ -7,4 +7,6 @@ const String WIFI_PASS = "XXXX";
 const String OTA_PASS = "XXXX";
 
 const String HA_TOKEN = "Bearer XXXX";
-const String HA_URL = "http://<your-ha-host>/api/states/<your-sensor-id>";
+const String HA_URL = "http://<your-ha-host>/api/states/";
+const String HA_SENSOR_MESSAGE = "<your-sensor-id>";
+const String HA_SENSOR_ZONE = "zone.home";

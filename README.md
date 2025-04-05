@@ -1,6 +1,5 @@
 # IV-27 VFD Clock
 
-> Work in progress
 
 ## Features
 
@@ -8,6 +7,8 @@
 - Temperature + Humidity
 - Select displayed info with a rotary knob
 - Display simple messages from Home Assistant
+- Auto off during night + occupancy sensor from Home Assistant
+
 
 ## Bill of materials
 
@@ -19,8 +20,12 @@
 - (optional) DS3231 RTC
 - MT3608 boost converter (25V)
 - Mini560 or LM2596 buck converter (3.3V)
+- 2x 130mm LED "noodle"
+	- NPN transitor and resistors (to drive the lights)
 - rotary encoder with push action
+	- 2x 100nF capacitors (between GND and the encoder A and B pins)
 - 5v power supply (or USB)
+
 
 ## Interactions
 
@@ -38,11 +43,12 @@ In date/time edit (RTC only):
 - single click: next element
 - long click: previous element
 
+
 ## Configuration
 
 ### Home Assistant
 
-Add a custom sensor whose state value is the message to display on the clock.
+Add a custom sensor whose state value is the message to display on the clock (only letters, numbers, `.` and `-` symbols).
 
 **Example (extracting data from a todo list):**
 ```yaml
@@ -72,7 +78,8 @@ template:
 Copy `secrets.tpl.h` into `secrets.h` and fill the values.
 
 - `HA_TOKEN`: go to your HA profile page, then Security, and create a new Long lived token at the bottom of the page (keep the `Bearer ` prefix)
-- `HA_URL`: fill in your HA hostname and the id of the sensor created above
+- `HA_URL`: fill in your HA hostname
+- `HA_SENSOR_MESSAGE`: set the id of the sensor created above
 - `OTA_PASS`: choose a password to secure the Wifi OTA update
 
 Copy `upload_params.tpl.ini` into `upload_params.ini` and fill the OTA password.
@@ -85,16 +92,21 @@ In `constants.hpp` you can also configure:
 - `USE_WIFI_OTA`: comment to disable the Wifi OTA
 - `USE_BME280_SENSOR`: comment to disable the ambient sensor
 - `USE_HA_MESSAGE`: comment to disable the message display from HA
+- `USE_HA_OCCUPANCY`: comment to disable occupancy info from HA
 - `TIMEZONE`: timezone for NTP ([check available TZ](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h))
 - `TEMP_OFFSET`: applies an offset to the measured temperature
-- `DIN`, `CLK`, `LOAD`, `BLANK`: MCU pins to the MAX6921
+- `isDaytime(...)`: configure the time when the clock is on
+- `DRIVER_DIN`, `DRIVER_CLK`, `DRIVER_LOAD`: MCU pins to the MAX6921
 - `ENCODER_A`, `ENCODER_B`, `ENCODER_SW`: MCU pins to the rotary encoder
+- `LIGHT`: MCU pins to the lights
 - `GRID`, `SEGMENTS`: MAX6921 pins to the display
+
 
 ## Resources
 
 - https://www.instructables.com/VFD-Alarm-Clock/
 - https://www.barbouri.com/2020/07/04/iv-27-icetube-clock-project/
+
 
 ## License
 

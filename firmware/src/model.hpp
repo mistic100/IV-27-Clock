@@ -22,6 +22,7 @@ enum class DisplayMode
     MENU,
     SET_DATE,
     SET_TIME,
+    SET_LIGHT,
 };
 
 bool isMainDisplayMode(const DisplayMode &i)
@@ -62,11 +63,12 @@ enum class MenuItem
     // main menu items
     SET_DATE,
     SET_TIME,
+    SET_LIGHT,
     BACK,
 #ifdef USE_RTC
     FIRST_ITEM = SET_DATE,
 #else
-    FIRST_ITEM = BACK,
+    FIRST_ITEM = SET_LIGHT,
 #endif
     LAST_ITEM = BACK,
 
@@ -77,6 +79,8 @@ enum class MenuItem
     HOURS,
     MINUTES,
     SECONDS,
+    MODE,
+    BRIGHT,
     DONE
 };
 
@@ -104,4 +108,60 @@ MenuItem &operator--(MenuItem &i)
         i = static_cast<MenuItem>(static_cast<int>(i) - 1);
     }
     return i;
+}
+
+enum class LightMode
+{
+    OFF,
+    ON,
+    BREATH,
+
+    FIRST_ITEM = OFF,
+    LAST_ITEM = BREATH
+};
+
+LightMode &operator++(LightMode &i)
+{
+    if (i == LightMode::LAST_ITEM)
+    {
+        i = LightMode::FIRST_ITEM;
+    }
+    else
+    {
+        i = static_cast<LightMode>(static_cast<int>(i) + 1);
+    }
+    return i;
+}
+
+LightMode &operator--(LightMode &i)
+{
+    if (i == LightMode::FIRST_ITEM)
+    {
+        i = LightMode::LAST_ITEM;
+    }
+    else
+    {
+        i = static_cast<LightMode>(static_cast<int>(i) - 1);
+    }
+    return i;
+}
+
+const char *OFF_STR = "OFF   ";
+const char *ON_STR = "ON    ";
+const char *BREATH_STR = "BREATH";
+const char *EMPTY_STR = "";
+
+const char *lightModeStr(const LightMode &mode)
+{
+    switch (mode)
+    {
+    case LightMode::OFF:
+        return OFF_STR;
+    case LightMode::ON:
+        return ON_STR;
+    case LightMode::BREATH:
+        return BREATH_STR;
+    default:
+        return EMPTY_STR;
+    }
 }

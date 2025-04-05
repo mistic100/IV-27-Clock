@@ -5,6 +5,8 @@
 #include <FastLED.h>
 #include "constants.hpp"
 
+static const char *TAG_DISPLAY = "DISPLAY";
+
 std::array<byte, 7> SEGMENTS_BLANK = {0, 0, 0, 0, 0, 0, 0};
 
 // ASCII 48-57
@@ -62,6 +64,7 @@ class Display
 {
 private:
     String str;
+    bool isOn = true;
 
     char chars[NUM_GRIDS];
     byte dots[NUM_GRIDS];
@@ -79,25 +82,30 @@ public:
 
     void begin()
     {
-        pinMode(DIN, OUTPUT);
-        pinMode(CLK, OUTPUT);
-        pinMode(LOAD, OUTPUT);
-        pinMode(BLANK, OUTPUT);
+        pinMode(DRIVER_DIN, OUTPUT);
+        pinMode(DRIVER_CLK, OUTPUT);
+        pinMode(DRIVER_LOAD, OUTPUT);
 
-        digitalWrite(DIN, LOW);
-        digitalWrite(CLK, LOW);
-        digitalWrite(LOAD, LOW);
-        digitalWrite(BLANK, LOW);
+        digitalWrite(DRIVER_DIN, LOW);
+        digitalWrite(DRIVER_CLK, LOW);
+        digitalWrite(DRIVER_LOAD, LOW);
     }
 
     void on()
     {
-        digitalWrite(BLANK, LOW);
+        isOn = true;
     }
 
     void off()
     {
-        digitalWrite(BLANK, HIGH);
+        isOn = false;
+
+        digitalWrite(DRIVER_DIN, 0);
+        for (int k = NUM_OUTS - 1; k >= 0; k--)
+        {
+            clock();
+        }
+        load();
     }
 
     void clear()
@@ -125,6 +133,8 @@ public:
     void print(const String &str, const std::vector<byte> &dots = {})
     {
         clear();
+
+        Serial.println(str);
 
         if (str.length() > NUM_GRIDS)
         {
@@ -172,6 +182,11 @@ public:
 
     void loop()
     {
+        if (!isOn)
+        {
+            return;
+        }
+
         EVERY_N_MILLIS(BLINK_INTERVAL_MS)
         {
             blink();
@@ -193,7 +208,7 @@ public:
             // send the data
             for (int k = NUM_OUTS - 1; k >= 0; k--)
             {
-                digitalWrite(DIN, data[k]);
+                digitalWrite(DRIVER_DIN, data[k]);
                 clock();
             }
             load();
@@ -206,14 +221,14 @@ public:
 private:
     void clock()
     {
-        digitalWrite(CLK, HIGH);
-        digitalWrite(CLK, LOW);
+        digitalWrite(DRIVER_CLK, HIGH);
+        digitalWrite(DRIVER_CLK, LOW);
     }
 
     void load()
     {
-        digitalWrite(LOAD, HIGH);
-        digitalWrite(LOAD, LOW);
+        digitalWrite(DRIVER_LOAD, HIGH);
+        digitalWrite(DRIVER_LOAD, LOW);
     }
 
     void blink()

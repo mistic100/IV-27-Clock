@@ -17,7 +17,7 @@ boolean ds3231Begin()
 
 static const char *TAG_DT = "DATETIME";
 
-class MutableDateTime : public DateTime
+class DateTimeWrapper : public DateTime
 {
 private:
 #ifdef USE_RTC
@@ -25,7 +25,7 @@ private:
 #endif
 
 public:
-    MutableDateTime()
+    DateTimeWrapper()
     {
     }
 
@@ -41,7 +41,7 @@ public:
 
         while (!ds3231Begin())
         {
-            log_e("Could not find DS3231");
+            ESP_LOGE(TAG_DT, "Could not find DS3231");
             delay(1000);
         }
 
@@ -80,8 +80,8 @@ public:
         ss = dt.second();
 #endif
 
-        ESP_LOGI(TAG_DT, "Date: %d-%d-%d", yOff, m, d);
-        ESP_LOGI(TAG_DT, "Time: %d:%d:%d", hh, mm, ss);
+        ESP_LOGI(TAG_DT, "Date: %02d-%02d-%02d", year(), m, d);
+        ESP_LOGI(TAG_DT, "Time: %02d:%02d:%02d", hh, mm, ss);
     }
 
 #ifdef USE_RTC
@@ -98,7 +98,6 @@ public:
         ds3231->setMinute(mm);
         ds3231->setSecond(ss);
     }
-#endif
 
     void incYear()
     {
@@ -162,6 +161,7 @@ public:
     {
         ss = ss == 0 ? 59 : ss - 1;
     }
+#endif
 
     /**
      * @brief Advance one second, and update minute and hour if necessary
