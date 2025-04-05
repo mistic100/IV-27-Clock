@@ -2,19 +2,41 @@
 
 #include <Arduino.h>
 #include <FastLED.h>
+#include "Settings.hpp"
 #include "constants.hpp"
 #include "model.hpp"
+
+float mapf(float x, float in_min, float in_max, float out_min, float out_max)
+{
+    const float run = in_max - in_min;
+    if (run == 0)
+    {
+        log_e("map(): Invalid input range, min == max");
+        return -1; // AVR returns -1, SAM returns 0
+    }
+    const float rise = out_max - out_min;
+    const float delta = x - in_min;
+    return (delta * rise) / run + out_min;
+}
 
 class Light
 {
 public:
     bool isOn = true;
-    uint8_t brightness = 10;
-    LightMode mode = LightMode::BREATH;
+    uint8_t brightness;
+    LightMode mode;
 
     void begin()
     {
-        pinMode(LIGHT, OUTPUT);
+        pinMode(LIGHT_P, OUTPUT);
+
+        brightness = SETTINGS.lightBrightness();
+        mode = SETTINGS.lightMode();
+
+        if (mode == LightMode::OFF)
+        {
+            off();
+        }
     }
 
     void loop()
@@ -27,22 +49,31 @@ public:
         switch (mode)
         {
         case LightMode::ON:
-            analogWrite(LIGHT, brightness * 25.5);
+            analogWrite(LIGHT_P, brightness * 25.5);
             break;
         case LightMode::BREATH:
         {
+            // https://makersportal.com/blog/2020/3/27/simple-breathing-led-in-arduino
             static const float gamma = 0.14; // affects the width of peak (more or less darkness)
             static const float range = 10000.0;
             static uint16_t k = 0;
 
-            float pwm_val = 25.5 + (brightness - 1) * 25.5 * exp(-pow((k / range - 0.5) / gamma, 2.0) / 2.0);
-            analogWrite(LIGHT, pwm_val);
+            auto val = exp(-pow((k / range - 0.5) / gamma, 2.0) / 2.0);
+            auto pwm_val = mapf(val, 0, 1, 10, brightness * 25.5);
+            analogWrite(LIGHT_P, pwm_val);
 
             k++;
             if (k == range)
             {
                 k = 0;
             }
+            break;
+        }
+        case LightMode::NOISE:
+        {
+            auto val = inoise8(millis());
+            auto pwm_val = mapf(val, 0, 255, 0, brightness * 25.5);
+            analogWrite(LIGHT_P, pwm_val);
             break;
         }
         }
@@ -56,7 +87,7 @@ public:
     void off()
     {
         isOn = false;
-        analogWrite(LIGHT, 0);
+        analogWrite(LIGHT_P, 0);
     }
 
     void nextMode()
@@ -102,4 +133,11 @@ public:
             brightness--;
         }
     }
+
+    void save()
+    {
+        SETTINGS.setLight(mode, brightness);
+    }
 };
+
+Light LIGHT;

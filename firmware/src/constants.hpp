@@ -12,8 +12,6 @@
 #define USE_HA_MESSAGE
 // enable turn off from Home Assistant home occupancy
 #define USE_HA_OCCUPANCY
-// enable turn off outside daytime
-#define USE_AUTO_OFF
 
 #if defined(USE_HA_MESSAGE) || defined(USE_HA_OCCUPANCY)
 #define USE_HA
@@ -31,7 +29,7 @@
 #define DRIVER_CLK D8
 #define DRIVER_LOAD D9
 
-#define LIGHT D0
+#define LIGHT_P D0
 
 #define ENCODER_A D2
 #define ENCODER_B D3
@@ -50,13 +48,6 @@
 #ifdef USE_BME280_SENSOR
 #define TEMP_OFFSET -2
 #define TEMP_UPDATE_INTERVAL_S 10
-#endif
-#ifdef USE_AUTO_OFF
-bool isDaytime(const uint8_t hours, const uint8_t minutes)
-{
-    uint16_t timeInMinutes = hours * 60 + minutes;
-    return timeInMinutes >= 8 * 60 + 30 && timeInMinutes < 23 * 60 + 30;
-}
 #endif
 
 #define BLINK_INTERVAL_MS 300

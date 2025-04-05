@@ -305,3 +305,5 @@ private:
         return !blinkState && blinks[index] == HIGH;
     }
 };
+
+Display DISP;

@@ -23,6 +23,7 @@ enum class DisplayMode
     SET_DATE,
     SET_TIME,
     SET_LIGHT,
+    SET_DAYTIME,
 };
 
 bool isMainDisplayMode(const DisplayMode &i)
@@ -38,7 +39,7 @@ DisplayMode &operator++(DisplayMode &i)
     }
     else
     {
-        i = static_cast<DisplayMode>(static_cast<int>(i) + 1);
+        i = static_cast<DisplayMode>(static_cast<uint8_t>(i) + 1);
     }
     return i;
 }
@@ -51,7 +52,7 @@ DisplayMode &operator--(DisplayMode &i)
     }
     else
     {
-        i = static_cast<DisplayMode>(static_cast<int>(i) - 1);
+        i = static_cast<DisplayMode>(static_cast<uint8_t>(i) - 1);
     }
     return i;
 }
@@ -64,6 +65,7 @@ enum class MenuItem
     SET_DATE,
     SET_TIME,
     SET_LIGHT,
+    SET_DAYTIME,
     BACK,
 #ifdef USE_RTC
     FIRST_ITEM = SET_DATE,
@@ -81,6 +83,8 @@ enum class MenuItem
     SECONDS,
     MODE,
     BRIGHT,
+    START,
+    END,
     DONE
 };
 
@@ -92,7 +96,7 @@ MenuItem &operator++(MenuItem &i)
     }
     else
     {
-        i = static_cast<MenuItem>(static_cast<int>(i) + 1);
+        i = static_cast<MenuItem>(static_cast<uint8_t>(i) + 1);
     }
     return i;
 }
@@ -105,7 +109,7 @@ MenuItem &operator--(MenuItem &i)
     }
     else
     {
-        i = static_cast<MenuItem>(static_cast<int>(i) - 1);
+        i = static_cast<MenuItem>(static_cast<uint8_t>(i) - 1);
     }
     return i;
 }
@@ -115,9 +119,10 @@ enum class LightMode
     OFF,
     ON,
     BREATH,
+    NOISE,
 
     FIRST_ITEM = OFF,
-    LAST_ITEM = BREATH
+    LAST_ITEM = NOISE
 };
 
 LightMode &operator++(LightMode &i)
@@ -128,7 +133,7 @@ LightMode &operator++(LightMode &i)
     }
     else
     {
-        i = static_cast<LightMode>(static_cast<int>(i) + 1);
+        i = static_cast<LightMode>(static_cast<uint8_t>(i) + 1);
     }
     return i;
 }
@@ -141,14 +146,15 @@ LightMode &operator--(LightMode &i)
     }
     else
     {
-        i = static_cast<LightMode>(static_cast<int>(i) - 1);
+        i = static_cast<LightMode>(static_cast<uint8_t>(i) - 1);
     }
     return i;
 }
 
-const char *OFF_STR = "OFF   ";
-const char *ON_STR = "ON    ";
+const char *OFF_STR = "OFF";
+const char *ON_STR = "ON";
 const char *BREATH_STR = "BREATH";
+const char *NOISE_STR = "NOISE";
 const char *EMPTY_STR = "";
 
 const char *lightModeStr(const LightMode &mode)
@@ -161,6 +167,8 @@ const char *lightModeStr(const LightMode &mode)
         return ON_STR;
     case LightMode::BREATH:
         return BREATH_STR;
+    case LightMode::NOISE:
+        return NOISE_STR;
     default:
         return EMPTY_STR;
     }

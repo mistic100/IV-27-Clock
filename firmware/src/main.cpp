@@ -2,8 +2,10 @@
 #include <ESPRotary.h>
 #include <Button2.h>
 #include <Wire.h>
+#include "Settings.hpp"
 #include "Display.hpp"
 #include "Light.hpp"
+#include "Ui.hpp"
 #include "Controller.hpp"
 #include "constants.hpp"
 
@@ -15,15 +17,14 @@ static const char *TAG_WIFI = "WIFI";
 #include <ArduinoOTA.h>
 #endif
 
-Display display;
-Light light;
 ESPRotary rotaryEncoder;
 Button2 button;
-Controller ctrl(&display, &light);
 
 void setup()
 {
     Serial.begin(115200);
+
+    SETTINGS.begin();
 
 #ifdef WIFI
     WiFi.mode(WIFI_STA);
@@ -46,30 +47,30 @@ void setup()
     ArduinoOTA.begin();
 
     ArduinoOTA.onStart([]() {
-        ctrl.off(true);
-        display.on();
-        display.print("Updating...");
+        CTRL.off(true);
+        DISP.on();
+        DISP.print("Updating...");
     });
 #endif
 
     Wire.begin();
-    display.begin();
-    light.begin();
-    ctrl.begin();
+    DISP.begin();
+    LIGHT.begin();
+    CTRL.begin();
     button.begin(ENCODER_SW);
     rotaryEncoder.begin(ENCODER_A, ENCODER_B, 4);
 
     button.setClickHandler([](Button2 &btn) { 
-        ctrl.click();
+        UI.click();
     });
     button.setLongClickHandler([](Button2 &btn) { 
-        ctrl.longClick();
+        UI.longClick();
     });
     rotaryEncoder.setLeftRotationHandler([](ESPRotary &r) { 
-        ctrl.up();
+        UI.down();
     });
     rotaryEncoder.setRightRotationHandler([](ESPRotary &r) {
-        ctrl.down();
+        UI.up();
     });
 }
 
@@ -80,7 +81,7 @@ void loop()
 #endif
     button.loop();
     rotaryEncoder.loop();
-    ctrl.loop();
-    light.loop();
-    display.loop();
+    CTRL.loop();
+    LIGHT.loop();
+    DISP.loop();
 }
