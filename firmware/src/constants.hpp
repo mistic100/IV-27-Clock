@@ -18,7 +18,7 @@
 #endif
 
 #if defined(USE_NTP) || defined(USE_WIFI_OTA) || defined(USE_HA)
-#define WIFI
+#define USE_WIFI
 #endif
 
 #ifndef USE_NTP

@@ -171,7 +171,7 @@ LightMode &operator--(LightMode &i)
 }
 
 const char *OFF_STR = "OFF";
-const char *ON_STR = "ON";
+const char *ON_STR = "STATIC";
 const char *BREATH_STR = "BREATH";
 const char *NOISE_STR = "NOISE";
 const char *EMPTY_STR = "";

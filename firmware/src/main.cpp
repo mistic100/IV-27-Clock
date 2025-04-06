@@ -9,7 +9,7 @@
 #include "Controller.hpp"
 #include "constants.hpp"
 
-#ifdef WIFI
+#ifdef USE_WIFI
 #include <WiFi.h>
 static const char *TAG_WIFI = "WIFI";
 #endif
@@ -26,7 +26,7 @@ void setup()
 
     SETTINGS.begin();
 
-#ifdef WIFI
+#ifdef USE_WIFI
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
 
