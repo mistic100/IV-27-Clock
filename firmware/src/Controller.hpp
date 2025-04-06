@@ -233,8 +233,8 @@ public:
         switch (mode)
         {
         case DisplayMode::TIME:
-            sprintf(str, "  %02d %02d %02d", dateTime.hour(), dateTime.minute(), dateTime.second());
-            DISP.print(str, {5, 8});
+            sprintf(str, "  %02d.%02d.%02d", dateTime.hour(), dateTime.minute(), dateTime.second());
+            DISP.print(str);
             break;
 
         case DisplayMode::DATE:
@@ -244,10 +244,16 @@ public:
 
 #ifdef USE_HA_MESSAGE
         case DisplayMode::MESSAGE:
-            DISP.print(message);
             if (message.length() <= NUM_GRIDS)
             {
+                auto leftPad = (NUM_GRIDS - message.length()) / 2;
+                sprintf(str, "% *s", leftPad + message.length(), message.c_str());
+                DISP.print(str);
                 DISP.blinkAll();
+            }
+            else
+            {
+                DISP.print(message);
             }
             break;
 #endif
@@ -298,35 +304,35 @@ public:
 
 #ifdef USE_RTC
         case DisplayMode::SET_DATE:
-            sprintf(str, "  %02d-%02d-%02d", dateTime.year() - 2000, dateTime.month(), dateTime.day());
+            sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
             DISP.print(str);
             switch (item)
             {
             case MenuItem::YEAR:
-                DISP.blink({1, 2});
+                DISP.blink({2, 3, 4, 5});
                 break;
             case MenuItem::MONTH:
-                DISP.blink({4, 5});
+                DISP.blink({7, 8});
                 break;
             case MenuItem::DAY:
-                DISP.blink({7, 8});
+                DISP.blink({10, 11});
                 break;
             }
             break;
 
         case DisplayMode::SET_TIME:
-            sprintf(str, " 20%02d.%02d.%02d", dateTime.hour(), dateTime.minute(), dateTime.second());
+            sprintf(str, "  %02d.%02d.%02d", dateTime.hour(), dateTime.minute(), dateTime.second());
             DISP.print(str);
             switch (item)
             {
             case MenuItem::HOURS:
-                DISP.blink({1, 2});
+                DISP.blink({3, 4});
                 break;
             case MenuItem::MINUTES:
-                DISP.blink({4, 5});
+                DISP.blink({6, 7});
                 break;
             case MenuItem::SECONDS:
-                DISP.blink({7, 8});
+                DISP.blink({9, 10});
                 break;
             }
             break;
