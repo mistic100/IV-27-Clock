@@ -5,14 +5,20 @@
 enum class DisplayMode
 {
     OFF,
-    MESSAGE,
 
     // main display modes
     TIME,
     DATE,
+#ifdef USE_TEMP_SENSOR
     TEMP,
+#endif
+#ifdef USE_HA_MESSAGE
+    MESSAGE,
+#endif
     FIRST_ITEM = TIME,
-#ifdef USE_BME280_SENSOR
+#ifdef USE_HA_MESSAGE
+    LAST_ITEM = MESSAGE,
+#elifdef USE_TEMP_SENSOR
     LAST_ITEM = TEMP,
 #else
     LAST_ITEM = DATE,
@@ -20,10 +26,18 @@ enum class DisplayMode
 
     // other modes
     MENU,
+    SET_LIGHT,
+#ifdef USE_RTC
     SET_DATE,
     SET_TIME,
-    SET_LIGHT,
+#endif
     SET_DAYTIME,
+#ifdef USE_TEMP_SENSOR
+    SET_TEMP_OFFSET,
+#endif
+#ifdef USE_HA_MESSAGE
+    SET_MESSAGE_TIMEOUT,
+#endif
 };
 
 bool isMainDisplayMode(const DisplayMode &i)
@@ -62,30 +76,35 @@ enum class MenuItem
     NONE,
 
     // main menu items
+    SET_LIGHT,
+#ifdef USE_RTC
     SET_DATE,
     SET_TIME,
-    SET_LIGHT,
-    SET_DAYTIME,
-    BACK,
-#ifdef USE_RTC
-    FIRST_ITEM = SET_DATE,
-#else
-    FIRST_ITEM = SET_LIGHT,
 #endif
+    SET_DAYTIME,
+#ifdef USE_TEMP_SENSOR
+    SET_TEMP_OFFSET,
+#endif
+#ifdef USE_HA_MESSAGE
+    SET_MESSAGE_TIMEOUT,
+#endif
+    BACK,
+    FIRST_ITEM = SET_LIGHT,
     LAST_ITEM = BACK,
 
-    // other items
+// other items
+#ifdef USE_RTC
     YEAR,
     MONTH,
     DAY,
     HOURS,
     MINUTES,
     SECONDS,
+#endif
     MODE,
     BRIGHT,
     START,
     END,
-    DONE
 };
 
 MenuItem &operator++(MenuItem &i)

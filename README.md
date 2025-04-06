@@ -8,6 +8,7 @@
 - Select displayed info with a rotary knob
 - Display simple messages from Home Assistant
 - Auto off during night + occupancy sensor from Home Assistant
+- Light effects
 
 
 ## Bill of materials
@@ -36,18 +37,26 @@
 
 In display mode:
 - single click: toggle on-off
-- rotate left or right: switch between time/date/temperature
+- rotate left or right: switch between time/date/temperature/message
 - long click: enter menu
 
 In menu mode:
 - rotate left or right: select menu item
 - single click: select menu item
 
-In date/time edit (RTC only):
+In setting:
 - rotate left or right: change value
-- single click: next element
+- single click: next element/save
 - long click: previous element
 
+Menu content :
+- SET DATE (RTC mode only)
+- SET TIME (RTC mode only)
+- SET LIGHT: configure lights effect and brightness
+- SET DAYTIME: configure start & end time for auto off feature
+- TEMP OFFSET: configure the offset of the measured temperature
+- MESS TIMEOUT: configure the delay after which the message is displayed
+- BACK
 
 ## Configuration
 

@@ -80,7 +80,7 @@ public:
         ss = dt.second();
 #endif
 
-        ESP_LOGI(TAG_DT, "Date: %02d-%02d-%02d", year(), m, d);
+        ESP_LOGI(TAG_DT, "Date: %04d-%02d-%02d", year(), m, d);
         ESP_LOGI(TAG_DT, "Time: %02d:%02d:%02d", hh, mm, ss);
     }
 

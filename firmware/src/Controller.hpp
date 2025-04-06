@@ -8,7 +8,7 @@
 #include "DateTimeWrapper.hpp"
 #include "model.hpp"
 
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
 #include <Adafruit_BME280.h>
 #endif
 #ifdef USE_HA
@@ -18,7 +18,7 @@
 class Controller
 {
 private:
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
     Adafruit_BME280 *bme280;
 #endif
 #ifdef USE_HA
@@ -27,8 +27,9 @@ private:
 
     uint16_t daytimeStart;
     uint16_t daytimeEnd;
+    uint8_t messageTimeout;
+    float tempOffset;
 
-    DateTimeWrapper dateTime;
     float temp;
     float humi;
     bool occupancy = true;
@@ -36,9 +37,10 @@ private:
 
     bool forceOff = false;
     bool forceOn = false;
-    uint8_t messageTimeout = 0;
+    uint8_t messageTimer = 0;
 
 public:
+    DateTimeWrapper dateTime;
     DisplayMode mode = DisplayMode::TIME;
     MenuItem item = MenuItem::NONE;
 
@@ -49,16 +51,16 @@ public:
 
         dateTime.init();
 
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
         bme280 = new Adafruit_BME280();
-
         while (!bme280->begin(0x76))
         {
             log_e("Could not find BME280");
             delay(1000);
         }
 
-        bme280->setTemperatureCompensation(TEMP_OFFSET);
+        tempOffset = SETTINGS.tempOffset();
+        bme280->setTemperatureCompensation(tempOffset);
         getTemp();
 #endif
 
@@ -66,6 +68,7 @@ public:
         haSensor = new HaSensor();
 #endif
 #ifdef USE_HA_MESSAGE
+        messageTimeout = SETTINGS.messageTimeout();
         getMessage();
 #endif
 #ifdef USE_HA_OCCUPANCY
@@ -88,7 +91,7 @@ public:
         }
 #endif
 
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
         // update temperature
         EVERY_N_SECONDS(TEMP_UPDATE_INTERVAL_S)
         {
@@ -98,10 +101,11 @@ public:
 
         EVERY_N_SECONDS(1)
         {
+#ifdef USE_RTC
             // if not setting time, advance the clock
             if (mode != DisplayMode::SET_TIME)
             {
-                // every hour, force an update from the RTC/NTP
+                // every hour, force an update from the RTC
                 if (dateTime.tick())
                 {
                     // ...unless we are setting the date
@@ -111,20 +115,27 @@ public:
                     }
                 }
             }
+#else
+            // every hour, force an update from the NTP
+            if (dateTime.tick())
+            {
+                dateTime.update();
+            }
+#endif
 
             // apply auto-off rules
             updateAutoOff();
 
 #ifdef USE_HA_MESSAGE
             // force display the message
-            if (isMainDisplayMode(mode))
+            if (isMainDisplayMode(mode) && mode != DisplayMode::MESSAGE)
             {
-                if (messageTimeout > 0)
+                if (messageTimer > 0)
                 {
-                    messageTimeout--;
+                    messageTimer--;
                 }
 
-                if (messageTimeout == 0 && !message.isEmpty())
+                if (messageTimer == 0 && !message.isEmpty())
                 {
                     setMode(DisplayMode::MESSAGE);
                     show();
@@ -139,7 +150,7 @@ public:
 #endif
 
             // update display
-            if (isMainDisplayMode(mode))
+            if (isMainDisplayMode(mode) && mode != DisplayMode::MESSAGE)
             {
                 show();
             }
@@ -149,43 +160,47 @@ public:
     // turn off if not already off
     void off(bool force = false)
     {
-        if (mode != DisplayMode::OFF && (!forceOn || force))
+        if (!forceOn || force)
         {
-            DISP.off();
-            LIGHT.off();
-            setMode(DisplayMode::OFF);
+            if (mode != DisplayMode::OFF)
+            {
+                DISP.off();
+                LIGHT.off();
+                setMode(DisplayMode::OFF);
+            }
 
+            forceOff = force && !forceOn;
             forceOn = false;
         }
-
-        forceOff = force;
     }
 
     // turn on if off
     void on(bool force = false)
     {
-        if (mode == DisplayMode::OFF && (!forceOff || force))
+        if (!forceOff || force)
         {
-            DISP.on();
-            LIGHT.on();
+            if (mode == DisplayMode::OFF)
+            {
+                DISP.on();
+                LIGHT.on();
 
 #ifdef USE_HA_MESSAGE
-            if (!message.isEmpty())
-            {
-                setMode(DisplayMode::MESSAGE);
-            }
-            else
-            {
-                setMode(DisplayMode::TIME);
-            }
+                if (!message.isEmpty())
+                {
+                    setMode(DisplayMode::MESSAGE);
+                }
+                else
+                {
+                    setMode(DisplayMode::TIME);
+                }
 #else
-            setMode(DisplayMode::TIME);
+                setMode(DisplayMode::TIME);
 #endif
+            }
 
+            forceOn = force && !forceOff;
             forceOff = false;
         }
-
-        forceOn = force;
     }
 
     // change the display mode
@@ -206,7 +221,7 @@ public:
         // reset the message timeout
         if (mode != DisplayMode::MESSAGE && mode != DisplayMode::OFF)
         {
-            messageTimeout = 10;
+            messageTimer = messageTimeout;
         }
 #endif
     }
@@ -237,7 +252,7 @@ public:
             break;
 #endif
 
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
         case DisplayMode::TEMP:
         {
             auto tempFirstDecimal = (int)((temp - (long)temp) * 10);
@@ -260,11 +275,21 @@ public:
                 break;
 #endif
             case MenuItem::SET_LIGHT:
-                DISP.print("LIGHT");
+                DISP.print("SET LIGHT");
                 break;
             case MenuItem::SET_DAYTIME:
-                DISP.print("DAYTIME");
+                DISP.print("SET DAYTIME");
                 break;
+#ifdef USE_TEMP_SENSOR
+            case MenuItem::SET_TEMP_OFFSET:
+                DISP.print("TEMP OFFSET", {4});
+                break;
+#endif
+#ifdef USE_HA_MESSAGE
+            case MenuItem::SET_MESSAGE_TIMEOUT:
+                DISP.print("MESS TIMEOUT", {4});
+                break;
+#endif
             case MenuItem::BACK:
                 DISP.print("BACK");
                 break;
@@ -273,7 +298,7 @@ public:
 
 #ifdef USE_RTC
         case DisplayMode::SET_DATE:
-            sprintf(str, "%02d-%02d-%02d  OK", dateTime.year() - 2000, dateTime.month(), dateTime.day());
+            sprintf(str, "  %02d-%02d-%02d", dateTime.year() - 2000, dateTime.month(), dateTime.day());
             DISP.print(str);
             switch (item)
             {
@@ -286,14 +311,11 @@ public:
             case MenuItem::DAY:
                 DISP.blink({7, 8});
                 break;
-            case MenuItem::DONE:
-                DISP.blink({11, 12});
-                break;
             }
             break;
 
         case DisplayMode::SET_TIME:
-            sprintf(str, "%02d.%02d.%02d  OK", dateTime.hour(), dateTime.minute(), dateTime.second());
+            sprintf(str, " 20%02d.%02d.%02d", dateTime.hour(), dateTime.minute(), dateTime.second());
             DISP.print(str);
             switch (item)
             {
@@ -306,15 +328,12 @@ public:
             case MenuItem::SECONDS:
                 DISP.blink({7, 8});
                 break;
-            case MenuItem::DONE:
-                DISP.blink({11, 12});
-                break;
             }
             break;
 #endif
 
         case DisplayMode::SET_LIGHT:
-            sprintf(str, "% 6s    %02d", lightModeStr(LIGHT.mode), LIGHT.brightness);
+            sprintf(str, "% 6s %5d", lightModeStr(LIGHT.mode), LIGHT.brightness);
             DISP.print(str);
             switch (item)
             {
@@ -344,7 +363,24 @@ public:
             }
             DISP.print(str);
             DISP.blink({7, 8, 9, 10, 11});
+            break;
         }
+
+#ifdef USE_TEMP_SENSOR
+        case DisplayMode::SET_TEMP_OFFSET:
+            sprintf(str, "%10.1f*C", tempOffset);
+            DISP.print(str);
+            DISP.blink({1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+            break;
+#endif
+
+#ifdef USE_HA_MESSAGE
+        case DisplayMode::SET_MESSAGE_TIMEOUT:
+            sprintf(str, "%8d sec", messageTimeout);
+            DISP.print(str);
+            DISP.blink({1, 2, 3, 4, 5, 6, 7, 8, 9});
+            break;
+#endif
         }
     }
 
@@ -385,8 +421,49 @@ public:
         SETTINGS.setDaytime(daytimeStart, daytimeEnd);
     }
 
+#ifdef USE_TEMP_SENSOR
+    void incTempOffset()
+    {
+        tempOffset += 0.1;
+    }
+
+    void decTempOffset()
+    {
+        tempOffset -= 0.1;
+    }
+
+    void saveTempOffset()
+    {
+        SETTINGS.setTempOffset(tempOffset);
+        bme280->setTemperatureCompensation(tempOffset);
+    }
+#endif
+
+#ifdef USE_HA_MESSAGE
+    void incMessageTimeout()
+    {
+        if (messageTimeout < 250)
+        {
+            messageTimeout += 10;
+        }
+    }
+
+    void decMessageTimeout()
+    {
+        if (messageTimeout > 10)
+        {
+            messageTimeout -= 10;
+        }
+    }
+
+    void saveMessageTimeout()
+    {
+        SETTINGS.setMessageTimeout(messageTimeout);
+    }
+#endif
+
 private:
-#ifdef USE_BME280_SENSOR
+#ifdef USE_TEMP_SENSOR
     void getTemp()
     {
         temp = bme280->readTemperature();
@@ -414,7 +491,7 @@ private:
     // else : turn on
     void updateAutoOff()
     {
-        if (mode != DisplayMode::OFF && mode != DisplayMode::MESSAGE && !isMainDisplayMode(mode))
+        if (mode != DisplayMode::OFF && !isMainDisplayMode(mode))
         {
             return;
         }

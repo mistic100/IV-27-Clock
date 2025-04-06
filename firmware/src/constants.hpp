@@ -7,7 +7,7 @@
 // enable Wifi OTA
 #define USE_WIFI_OTA
 // enable BME280 ambient sensor
-#define USE_BME280_SENSOR
+#define USE_TEMP_SENSOR
 // enable message display from Home Assistant
 #define USE_HA_MESSAGE
 // enable turn off from Home Assistant home occupancy
@@ -42,16 +42,15 @@
 #ifdef USE_WIFI_OTA
 #define HOSTNAME "iv27-clock"
 #endif
-#ifdef USE_HA_MESSAGE
+#ifdef USE_HA
 #define HA_UPDATE_INTERVAL_S 60
 #endif
-#ifdef USE_BME280_SENSOR
-#define TEMP_OFFSET -2
+#ifdef USE_TEMP_SENSOR
 #define TEMP_UPDATE_INTERVAL_S 10
 #endif
 
 #define BLINK_INTERVAL_MS 300
-#define SCROLL_INTERVAL_MS 200
+#define SCROLL_INTERVAL_MS 150
 
 #define NUM_GRIDS 12
 #define NUM_OUTS 20

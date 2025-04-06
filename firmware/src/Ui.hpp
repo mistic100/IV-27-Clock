@@ -16,11 +16,11 @@ public:
             {
 #ifdef USE_RTC
             case MenuItem::SET_DATE:
-                dateTime.update();
+                CTRL.dateTime.update();
                 CTRL.setMode(DisplayMode::SET_DATE, MenuItem::YEAR);
                 break;
             case MenuItem::SET_TIME:
-                dateTime.update();
+                CTRL.dateTime.update();
                 CTRL.setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
                 break;
 #endif
@@ -30,6 +30,16 @@ public:
             case MenuItem::SET_DAYTIME:
                 CTRL.setMode(DisplayMode::SET_DAYTIME, MenuItem::START);
                 break;
+#ifdef USE_TEMP_SENSOR
+            case MenuItem::SET_TEMP_OFFSET:
+                CTRL.setMode(DisplayMode::SET_TEMP_OFFSET);
+                break;
+#endif
+#ifdef USE_HA_MESSAGE
+            case MenuItem::SET_MESSAGE_TIMEOUT:
+                CTRL.setMode(DisplayMode::SET_MESSAGE_TIMEOUT);
+                break;
+#endif
             case MenuItem::BACK:
                 CTRL.setMode(DisplayMode::TIME);
                 break;
@@ -46,10 +56,7 @@ public:
                 CTRL.setMode(DisplayMode::SET_DATE, MenuItem::DAY);
                 break;
             case MenuItem::DAY:
-                CTRL.setMode(DisplayMode::SET_DATE, MenuItem::DONE);
-                break;
-            case MenuItem::DONE:
-                dateTime.persistDate();
+                CTRL.dateTime.persistDate();
                 CTRL.setMode(DisplayMode::MENU, MenuItem::SET_DATE);
                 break;
             }
@@ -64,10 +71,7 @@ public:
                 CTRL.setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
                 break;
             case MenuItem::SECONDS:
-                CTRL.setMode(DisplayMode::SET_TIME, MenuItem::DONE);
-                break;
-            case MenuItem::DONE:
-                dateTime.persistDate();
+                CTRL.dateTime.persistDate();
                 CTRL.setMode(DisplayMode::MENU, MenuItem::SET_TIME);
                 break;
             }
@@ -97,6 +101,18 @@ public:
                 break;
             }
             break;
+#ifdef USE_TEMP_SENSOR
+        case DisplayMode::SET_TEMP_OFFSET:
+            CTRL.saveTempOffset();
+            CTRL.setMode(DisplayMode::MENU, MenuItem::SET_TEMP_OFFSET);
+            break;
+#endif
+#ifdef USE_HA_MESSAGE
+        case DisplayMode::SET_MESSAGE_TIMEOUT:
+            CTRL.saveMessageTimeout();
+            CTRL.setMode(DisplayMode::MENU, MenuItem::SET_MESSAGE_TIMEOUT);
+            break;
+#endif
         case DisplayMode::OFF:
             CTRL.on(true);
             break;
@@ -122,9 +138,6 @@ public:
             case MenuItem::DAY:
                 CTRL.setMode(DisplayMode::SET_DATE, MenuItem::MONTH);
                 break;
-            case MenuItem::DONE:
-                CTRL.setMode(DisplayMode::SET_DATE, MenuItem::DAY);
-                break;
             }
             break;
         case DisplayMode::SET_TIME:
@@ -135,9 +148,6 @@ public:
                 break;
             case MenuItem::SECONDS:
                 CTRL.setMode(DisplayMode::SET_TIME, MenuItem::MINUTES);
-                break;
-            case MenuItem::DONE:
-                CTRL.setMode(DisplayMode::SET_TIME, MenuItem::SECONDS);
                 break;
             }
             break;
@@ -181,13 +191,13 @@ public:
             switch (CTRL.item)
             {
             case MenuItem::YEAR:
-                dateTime.incYear();
+                CTRL.dateTime.incYear();
                 break;
             case MenuItem::MONTH:
-                dateTime.incMonth();
+                CTRL.dateTime.incMonth();
                 break;
             case MenuItem::DAY:
-                dateTime.incDay();
+                CTRL.dateTime.incDay();
                 break;
             }
             break;
@@ -195,13 +205,13 @@ public:
             switch (CTRL.item)
             {
             case MenuItem::HOURS:
-                dateTime.incHours();
+                CTRL.dateTime.incHours();
                 break;
             case MenuItem::MINUTES:
-                dateTime.incMinutes();
+                CTRL.dateTime.incMinutes();
                 break;
             case MenuItem::SECONDS:
-                dateTime.incSeconds();
+                CTRL.dateTime.incSeconds();
                 break;
             }
             break;
@@ -227,9 +237,16 @@ public:
                 CTRL.incDaytimeEnd();
             }
             break;
-        case DisplayMode::MESSAGE:
-            CTRL.setMode(DisplayMode::TIME);
+#ifdef USE_TEMP_SENSOR
+        case DisplayMode::SET_TEMP_OFFSET:
+            CTRL.incTempOffset();
             break;
+#endif
+#ifdef USE_HA_MESSAGE
+        case DisplayMode::SET_MESSAGE_TIMEOUT:
+            CTRL.incMessageTimeout();
+            break;
+#endif
         default:
             if (isMainDisplayMode(CTRL.mode))
             {
@@ -253,13 +270,13 @@ public:
             switch (CTRL.item)
             {
             case MenuItem::YEAR:
-                dateTime.decYear();
+                CTRL.dateTime.decYear();
                 break;
             case MenuItem::MONTH:
-                dateTime.decMonth();
+                CTRL.dateTime.decMonth();
                 break;
             case MenuItem::DAY:
-                dateTime.decDay();
+                CTRL.dateTime.decDay();
                 break;
             }
             break;
@@ -267,13 +284,13 @@ public:
             switch (CTRL.item)
             {
             case MenuItem::HOURS:
-                dateTime.decHours();
+                CTRL.dateTime.decHours();
                 break;
             case MenuItem::MINUTES:
-                dateTime.decMinutes();
+                CTRL.dateTime.decMinutes();
                 break;
             case MenuItem::SECONDS:
-                dateTime.decSeconds();
+                CTRL.dateTime.decSeconds();
                 break;
             }
             break;
@@ -299,9 +316,16 @@ public:
                 CTRL.decDaytimeEnd();
             }
             break;
-        case DisplayMode::MESSAGE:
-            CTRL.setMode(DisplayMode::TIME);
+#ifdef USE_TEMP_SENSOR
+        case DisplayMode::SET_TEMP_OFFSET:
+            CTRL.decTempOffset();
             break;
+#endif
+#ifdef USE_HA_MESSAGE
+        case DisplayMode::SET_MESSAGE_TIMEOUT:
+            CTRL.decMessageTimeout();
+            break;
+#endif
         default:
             if (isMainDisplayMode(CTRL.mode))
             {
