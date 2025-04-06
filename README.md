@@ -18,13 +18,18 @@
 - Seeed Studio Xiao ESP32C3 MCU
 - (optional) BME280 ambient sensor
 - (optional) DS3231 RTC
-- MT3608 boost converter (25V)
+- MT3608 or XL6009 boost converter (25V)
 - Mini560 or LM2596 buck converter (3.3V)
 - 2x 130mm LED "noodle"
 	- NPN transitor and resistors (to drive the lights)
 - rotary encoder with push action
 	- 2x 100nF capacitors (between GND and the encoder A and B pins)
 - 5v power supply (or USB)
+
+
+## Schematics
+
+![](./schematics/IV-27_clock.png)
 
 
 ## Interactions

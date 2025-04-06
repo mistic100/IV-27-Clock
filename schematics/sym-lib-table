@@ -1,0 +1,6 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "MAX6921")(type "KiCad")(uri "${KIPRJMOD}/MAX6921.kicad_sym")(options "")(descr ""))
+  (lib (name "MOUDLE-SEEEDUINO-XIAO-ESP32C3")(type "KiCad")(uri "${KIPRJMOD}/MOUDLE-SEEEDUINO-XIAO-ESP32C3.kicad_sym")(options "")(descr ""))
+  (lib (name "IV-27")(type "KiCad")(uri "${KIPRJMOD}/IV-27.kicad_sym")(options "")(descr ""))
+)
