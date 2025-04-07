@@ -1,5 +1,9 @@
 # IV-27 VFD Clock
 
+![photo](https://photos.strangeplanet.fr/i.php?/upload/2025/04/07/20250407184306-3b429f74-la.jpg)
+
+[More photos on my website](https://photos.strangeplanet.fr/index.php?/category/256-iv_27_vfd_clock)
+
 
 ## Features
 
