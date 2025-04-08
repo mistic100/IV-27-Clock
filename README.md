@@ -108,15 +108,13 @@ In `constants.hpp` you can also configure:
 
 - `USE_NTP`: use Network Time Prototal, comment to use RTC instead
 - `USE_WIFI_OTA`: comment to disable the Wifi OTA
-- `USE_BME280_SENSOR`: comment to disable the ambient sensor
+- `USE_TEMP_SENSOR`: comment to disable the ambient sensor
 - `USE_HA_MESSAGE`: comment to disable the message display from HA
 - `USE_HA_OCCUPANCY`: comment to disable occupancy info from HA
 - `TIMEZONE`: timezone for NTP ([check available TZ](https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h))
-- `TEMP_OFFSET`: applies an offset to the measured temperature
-- `isDaytime(...)`: configure the time when the clock is on
 - `DRIVER_DIN`, `DRIVER_CLK`, `DRIVER_LOAD`: MCU pins to the MAX6921
 - `ENCODER_A`, `ENCODER_B`, `ENCODER_SW`: MCU pins to the rotary encoder
-- `LIGHT`: MCU pins to the lights
+- `LIGHT_P`: MCU pins to the lights
 - `GRID`, `SEGMENTS`: MAX6921 pins to the display
 
 

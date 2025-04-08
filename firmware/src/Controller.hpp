@@ -233,8 +233,16 @@ public:
         switch (mode)
         {
         case DisplayMode::TIME:
-            sprintf(str, "  %02d.%02d.%02d", dateTime.hour(), dateTime.minute(), dateTime.second());
+            sprintf(str, "  %02d %02d %02d", dateTime.hour(), dateTime.minute(), dateTime.second());
             DISP.print(str);
+            if (dateTime.second() % 2 == 0)
+            {
+                DISP.print(str, {5, 8});
+            }
+            else
+            {
+                DISP.print(str);
+            }
             break;
 
         case DisplayMode::DATE:
