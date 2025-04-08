@@ -248,10 +248,7 @@ public:
             break;
 #endif
         default:
-            if (isMainDisplayMode(CTRL.mode))
-            {
-                CTRL.setMode(++CTRL.mode);
-            }
+            CTRL.nextMode();
             break;
         }
 
@@ -327,10 +324,7 @@ public:
             break;
 #endif
         default:
-            if (isMainDisplayMode(CTRL.mode))
-            {
-                CTRL.setMode(--CTRL.mode);
-            }
+            CTRL.prevMode();
             break;
         }
 

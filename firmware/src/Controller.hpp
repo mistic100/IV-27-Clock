@@ -41,11 +41,13 @@ private:
 
 public:
     DateTimeWrapper dateTime;
-    DisplayMode mode = DisplayMode::TIME;
+    DisplayMode defaultMode;
+    DisplayMode mode;
     MenuItem item = MenuItem::NONE;
 
     void begin()
     {
+        mode = defaultMode = SETTINGS.displayMode();
         daytimeStart = SETTINGS.daytimeStart();
         daytimeEnd = SETTINGS.daytimeEnd();
 
@@ -145,7 +147,7 @@ public:
             // return to time if there is not more message
             if (mode == DisplayMode::MESSAGE && message.isEmpty())
             {
-                setMode(DisplayMode::TIME);
+                setMode(defaultMode);
             }
 #endif
 
@@ -157,7 +159,10 @@ public:
         }
     }
 
-    // turn off if not already off
+    /**
+     * Turn off
+     * @param force will temporarily disable the auto-off
+     */
     void off(bool force = false)
     {
         if (!forceOn || force)
@@ -174,7 +179,10 @@ public:
         }
     }
 
-    // turn on if off
+    /**
+     * Turn on
+     * @param force will temporarily disable the auto-on
+     */
     void on(bool force = false)
     {
         if (!forceOff || force)
@@ -191,15 +199,65 @@ public:
                 }
                 else
                 {
-                    setMode(DisplayMode::TIME);
+                    setMode(defaultMode);
                 }
 #else
-                setMode(DisplayMode::TIME);
+                setMode(defaultMode);
 #endif
             }
 
             forceOn = force && !forceOff;
             forceOff = false;
+        }
+    }
+
+    /**
+     * Go to next mode, skipping message if empty
+     * Also change the default mode if time, date or temp
+     */
+    void nextMode()
+    {
+        if (!isMainDisplayMode(mode))
+        {
+            return;
+        }
+
+        ++mode;
+        if (mode == DisplayMode::MESSAGE && message.isEmpty())
+        {
+            ++mode;
+        }
+
+        setMode(mode);
+
+        if (mode != DisplayMode::MESSAGE) {
+            defaultMode = mode;
+            SETTINGS.setDisplayMode(mode);
+        }
+    }
+
+    /**
+     * Go to previous mode, skipping message if empty
+     * Also change the default mode if time, date or temp
+     */
+    void prevMode()
+    {
+        if (!isMainDisplayMode(mode))
+        {
+            return;
+        }
+
+        --mode;
+        if (mode == DisplayMode::MESSAGE && message.isEmpty())
+        {
+            --mode;
+        }
+
+        setMode(mode);
+
+        if (mode != DisplayMode::MESSAGE) {
+            defaultMode = mode;
+            SETTINGS.setDisplayMode(mode);
         }
     }
 

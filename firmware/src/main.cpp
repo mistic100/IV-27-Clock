@@ -48,8 +48,6 @@ void setup()
 
     ArduinoOTA.onStart([]() {
         CTRL.off(true);
-        DISP.on();
-        DISP.print("Updating...");
     });
 #endif
 

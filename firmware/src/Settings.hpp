@@ -3,6 +3,7 @@
 #include <ArduinoNvs.h>
 #include "model.hpp"
 
+static const char *KEY_DISPLAY_MODE = "dm";
 static const char *KEY_LIGHT_MODE = "lm";
 static const char *KEY_LIGHT_BRIGHTNESS = "lb";
 static const char *KEY_DAYTIME_START = "dts";
@@ -16,6 +17,11 @@ public:
     void begin()
     {
         NVS.begin();
+    }
+
+    const DisplayMode displayMode() const
+    {
+        return static_cast<DisplayMode>(NVS.getInt(KEY_DISPLAY_MODE, static_cast<uint8_t>(DisplayMode::TIME)));
     }
 
     const LightMode lightMode() const
@@ -51,6 +57,12 @@ public:
         return NVS.getInt(KEY_MESSAGE_TIMEOUT, 30);
     }
 #endif
+
+    void setDisplayMode(const DisplayMode mode)
+    {
+        NVS.setInt(KEY_DISPLAY_MODE, static_cast<uint8_t>(mode), false);
+        NVS.commit();
+    }
 
     void setLight(const LightMode mode, uint8_t brightness)
     {
