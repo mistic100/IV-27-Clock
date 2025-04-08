@@ -15,6 +15,16 @@
 - Light effects
 
 
+## Operation
+
+The IV-27 tube is a multiplexed display: it has 8 inputs for each part of a digit (7 segments + dot) and 14 grids to select which digit to display. Thats 22 pins to drive at 25 volts.
+
+For this job we use the MAX6921 IC which has 20 high-voltage outputs (I choose to not use the first grid which only has symbols nor the right-most digit).
+The MAX6921 is a simple serial to parallel converter: to send a data frame we have to put `DIN` low or high, ticking `CLK` for each value, once the 20 bits are send, ticking `LOAD` sets the outputs accordingly.
+
+Because the display is multiplexed we have to repetitively set each digit in an infinite loop.
+
+
 ## Bill of materials
 
 - IV-27 VFD tube
@@ -29,7 +39,6 @@
 	- NPN transitor and resistors (to drive the lights)
 - rotary encoder with push action
 	- 2x 100nF capacitors (between GND and the encoder A and B pins)
-- 5v power supply (or USB)
 
 
 ## Schematics
@@ -68,7 +77,7 @@ Menu content :
 
 Add a custom sensor whose state value is the message to display on the clock (only letters, numbers, `.` and `-` symbols).
 
-**Example (extracting data from a todo list):**
+**Example (extracting next due item from a todo list):**
 ```yaml
 template:
   - trigger:
@@ -84,11 +93,10 @@ template:
     sensor:
       - unique_id: todo_message
         state: >
-            {% set tdate = (now().date() + timedelta(days=7)) | string %}
+            {% set tdate = (now().date() + timedelta(days=1)) | string %}
             {{ items['todo.my_list']['items'] 
 				| selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
-				| map(attribute='summary') 
-				| list | join('|') | truncate(255) }}
+				| map(attribute='summary') | first() | truncate(255) }}
 ```
 
 ### Firmware
