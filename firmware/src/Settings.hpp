@@ -31,7 +31,7 @@ public:
 
     const uint8_t lightBrightness() const
     {
-        return NVS.getInt(KEY_LIGHT_BRIGHTNESS, 5);
+        return NVS.getInt(KEY_LIGHT_BRIGHTNESS, 12);
     }
 
     const uint16_t daytimeStart() const

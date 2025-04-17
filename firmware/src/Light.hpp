@@ -49,7 +49,7 @@ public:
         switch (mode)
         {
         case LightMode::ON:
-            analogWrite(LIGHT_P, brightness * 25.5);
+            analogWrite(LIGHT_P, brightness * 10.0);
             break;
         case LightMode::BREATH:
         {
@@ -59,7 +59,7 @@ public:
             static uint16_t k = 0;
 
             auto val = exp(-pow((k / range - 0.5) / gamma, 2.0) / 2.0);
-            auto pwm_val = mapf(val, 0, 1, 10, brightness * 25.5);
+            auto pwm_val = mapf(val, 0, 1, 10, brightness * 10.0);
             analogWrite(LIGHT_P, pwm_val);
 
             k++;
@@ -72,7 +72,7 @@ public:
         case LightMode::NOISE:
         {
             auto val = inoise8(millis());
-            auto pwm_val = mapf(val, 0, 255, 0, brightness * 25.5);
+            auto pwm_val = mapf(val, 0, 255, 0, brightness * 10.0);
             analogWrite(LIGHT_P, pwm_val);
             break;
         }
@@ -120,7 +120,7 @@ public:
 
     void incBrightness()
     {
-        if (brightness < 10)
+        if (brightness < 25)
         {
             brightness++;
         }
