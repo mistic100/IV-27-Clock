@@ -26,6 +26,7 @@ enum class DisplayMode
 
     // other modes
     MENU,
+    SET_DATE_FORMAT,
     SET_LIGHT,
 #ifdef USE_RTC
     SET_DATE,
@@ -76,6 +77,7 @@ enum class MenuItem
     NONE,
 
     // main menu items
+    SET_DATE_FORMAT,
     SET_LIGHT,
 #ifdef USE_RTC
     SET_DATE,
@@ -89,7 +91,7 @@ enum class MenuItem
     SET_MESSAGE_TIMEOUT,
 #endif
     BACK,
-    FIRST_ITEM = SET_LIGHT,
+    FIRST_ITEM = SET_DATE_FORMAT,
     LAST_ITEM = BACK,
 
 // other items
@@ -188,6 +190,57 @@ const char *lightModeStr(const LightMode &mode)
         return BREATH_STR;
     case LightMode::NOISE:
         return NOISE_STR;
+    default:
+        return EMPTY_STR;
+    }
+}
+
+enum class DateFormat
+{
+    FULL,
+    DAY_MONTH,
+
+    FIRST_ITEM = FULL,
+    LAST_ITEM = DAY_MONTH
+};
+
+DateFormat &operator++(DateFormat &i)
+{
+    if (i == DateFormat::LAST_ITEM)
+    {
+        i = DateFormat::FIRST_ITEM;
+    }
+    else
+    {
+        i = static_cast<DateFormat>(static_cast<uint8_t>(i) + 1);
+    }
+    return i;
+}
+
+DateFormat &operator--(DateFormat &i)
+{
+    if (i == DateFormat::FIRST_ITEM)
+    {
+        i = DateFormat::LAST_ITEM;
+    }
+    else
+    {
+        i = static_cast<DateFormat>(static_cast<uint8_t>(i) - 1);
+    }
+    return i;
+}
+
+const char *FULL_STR = "YYYY-MM-DD";
+const char *DAY_MONTH_STR = "DAY MONTH";
+
+const char *dateFormatStr(const DateFormat &mode)
+{
+    switch (mode)
+    {
+    case DateFormat::FULL:
+        return FULL_STR;
+    case DateFormat::DAY_MONTH:
+        return DAY_MONTH_STR;
     default:
         return EMPTY_STR;
     }

@@ -65,6 +65,7 @@ In setting:
 Menu content :
 - SET DATE (RTC mode only)
 - SET TIME (RTC mode only)
+- DATE FORMAT: switch between `YYYY-MM-DD` and `DD month` date format
 - SET LIGHT: configure lights effect and brightness
 - SET DAYTIME: configure start & end time for auto off feature
 - TEMP OFFSET: configure the offset of the measured temperature

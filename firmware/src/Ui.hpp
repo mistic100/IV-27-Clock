@@ -24,6 +24,9 @@ public:
                 CTRL.setMode(DisplayMode::SET_TIME, MenuItem::HOURS);
                 break;
 #endif
+            case MenuItem::SET_DATE_FORMAT:
+                CTRL.setMode(DisplayMode::SET_DATE_FORMAT);
+                break;
             case MenuItem::SET_LIGHT:
                 CTRL.setMode(DisplayMode::SET_LIGHT, MenuItem::MODE);
                 break;
@@ -41,7 +44,7 @@ public:
                 break;
 #endif
             case MenuItem::BACK:
-                CTRL.setMode(DisplayMode::TIME);
+                CTRL.setMode(CTRL.defaultMode);
                 break;
             }
             break;
@@ -77,6 +80,9 @@ public:
             }
             break;
 #endif
+        case DisplayMode::SET_DATE_FORMAT:
+            CTRL.saveDateFormat();
+            break;
         case DisplayMode::SET_LIGHT:
             switch (CTRL.item)
             {
@@ -216,6 +222,9 @@ public:
             }
             break;
 #endif
+        case DisplayMode::SET_DATE_FORMAT:
+            CTRL.nextDateFormat();
+            break;
         case DisplayMode::SET_LIGHT:
             switch (CTRL.item)
             {
@@ -292,6 +301,9 @@ public:
             }
             break;
 #endif
+        case DisplayMode::SET_DATE_FORMAT:
+            CTRL.prevDateFormat();
+            break;
         case DisplayMode::SET_LIGHT:
             switch (CTRL.item)
             {

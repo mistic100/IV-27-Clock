@@ -29,6 +29,7 @@ private:
     uint16_t daytimeEnd;
     uint8_t messageTimeout;
     float tempOffset;
+    DateFormat dateFormat;
 
     float temp;
     float humi;
@@ -50,6 +51,7 @@ public:
         mode = defaultMode = SETTINGS.displayMode();
         daytimeStart = SETTINGS.daytimeStart();
         daytimeEnd = SETTINGS.daytimeEnd();
+        dateFormat = SETTINGS.dateFormat();
 
         dateTime.init();
 
@@ -230,7 +232,8 @@ public:
 
         setMode(mode);
 
-        if (mode != DisplayMode::MESSAGE) {
+        if (mode != DisplayMode::MESSAGE)
+        {
             defaultMode = mode;
             SETTINGS.setDisplayMode(mode);
         }
@@ -255,7 +258,8 @@ public:
 
         setMode(mode);
 
-        if (mode != DisplayMode::MESSAGE) {
+        if (mode != DisplayMode::MESSAGE)
+        {
             defaultMode = mode;
             SETTINGS.setDisplayMode(mode);
         }
@@ -304,7 +308,14 @@ public:
             break;
 
         case DisplayMode::DATE:
-            sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
+            if (dateFormat == DateFormat::FULL)
+            {
+                sprintf(str, " %04d-%02d-%02d", dateTime.year(), dateTime.month(), dateTime.day());
+            }
+            else
+            {
+                sprintf(str, "% 2d %s", dateTime.day(), MONTHS[dateTime.month() - 1]);
+            }
             DISP.print(str);
             break;
 
@@ -346,6 +357,9 @@ public:
                 DISP.print("SET TIME");
                 break;
 #endif
+            case MenuItem::SET_DATE_FORMAT:
+                DISP.print("DATE FORMAT");
+                break;
             case MenuItem::SET_LIGHT:
                 DISP.print("SET LIGHT");
                 break;
@@ -403,6 +417,11 @@ public:
             }
             break;
 #endif
+
+        case DisplayMode::SET_DATE_FORMAT:
+            DISP.print(dateFormatStr(dateFormat));
+            DISP.blinkAll();
+            break;
 
         case DisplayMode::SET_LIGHT:
             sprintf(str, "% 6s %5d", lightModeStr(LIGHT.mode), LIGHT.brightness);
@@ -491,6 +510,21 @@ public:
     void saveDaytime()
     {
         SETTINGS.setDaytime(daytimeStart, daytimeEnd);
+    }
+
+    void nextDateFormat()
+    {
+        ++dateFormat;
+    }
+
+    void prevDateFormat()
+    {
+        --dateFormat;
+    }
+
+    void saveDateFormat()
+    {
+        SETTINGS.setDateFormat(dateFormat);
     }
 
 #ifdef USE_TEMP_SENSOR

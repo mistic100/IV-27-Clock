@@ -60,6 +60,21 @@ std::map<char, std::array<byte, 7>> SEGMENTS_SYM = {
     {'*', {{1, 1, 0, 0, 0, 1, 1}}}, // °
 };
 
+std::array<const char*, 12> MONTHS = {
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER"
+};
+
 class Display
 {
 private:

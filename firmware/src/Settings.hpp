@@ -4,6 +4,7 @@
 #include "model.hpp"
 
 static const char *KEY_DISPLAY_MODE = "dm";
+static const char *KEY_DATE_FORMAT = "df";
 static const char *KEY_LIGHT_MODE = "lm";
 static const char *KEY_LIGHT_BRIGHTNESS = "lb";
 static const char *KEY_DAYTIME_START = "dts";
@@ -22,6 +23,11 @@ public:
     const DisplayMode displayMode() const
     {
         return static_cast<DisplayMode>(NVS.getInt(KEY_DISPLAY_MODE, static_cast<uint8_t>(DisplayMode::TIME)));
+    }
+
+    const DateFormat dateFormat() const
+    {
+        return static_cast<DateFormat>(NVS.getInt(KEY_DATE_FORMAT, static_cast<uint8_t>(DateFormat::FULL)));
     }
 
     const LightMode lightMode() const
@@ -60,8 +66,12 @@ public:
 
     void setDisplayMode(const DisplayMode mode)
     {
-        NVS.setInt(KEY_DISPLAY_MODE, static_cast<uint8_t>(mode), false);
-        NVS.commit();
+        NVS.setInt(KEY_DISPLAY_MODE, static_cast<uint8_t>(mode));
+    }
+
+    void setDateFormat(const DateFormat format)
+    {
+        NVS.setInt(KEY_DATE_FORMAT, static_cast<uint8_t>(format));
     }
 
     void setLight(const LightMode mode, uint8_t brightness)
@@ -81,16 +91,14 @@ public:
 #ifdef USE_TEMP_SENSOR
     void setTempOffset(float offset)
     {
-        NVS.setFloat(KEY_TEMP_OFFSET, offset, false);
-        NVS.commit();
+        NVS.setFloat(KEY_TEMP_OFFSET, offset);
     }
 #endif
 
 #ifdef USE_HA_MESSAGE
     void setMessageTimeout(uint8_t timeout)
     {
-        NVS.setInt(KEY_MESSAGE_TIMEOUT, timeout, false);
-        NVS.commit();
+        NVS.setInt(KEY_MESSAGE_TIMEOUT, timeout);
     }
 #endif
 };
