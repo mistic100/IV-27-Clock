@@ -321,17 +321,7 @@ public:
 
 #ifdef USE_HA_MESSAGE
         case DisplayMode::MESSAGE:
-            if (message.length() <= NUM_GRIDS)
-            {
-                auto leftPad = (NUM_GRIDS - message.length()) / 2;
-                sprintf(str, "% *s", leftPad + message.length(), message.c_str());
-                DISP.print(str);
-                DISP.blinkAll();
-            }
-            else
-            {
-                DISP.print(message);
-            }
+            DISP.printScroll(message);
             break;
 #endif
 
@@ -420,7 +410,7 @@ public:
 
         case DisplayMode::SET_DATE_FORMAT:
             DISP.print(dateFormatStr(dateFormat));
-            DISP.blinkAll();
+            DISP.blink({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
             break;
 
         case DisplayMode::SET_LIGHT:
@@ -433,7 +423,6 @@ public:
                 break;
             case MenuItem::BRIGHT:
                 DISP.blink({11, 12});
-                break;
                 break;
             }
             break;
@@ -469,7 +458,7 @@ public:
         case DisplayMode::SET_MESSAGE_TIMEOUT:
             sprintf(str, "%8d sec", messageTimeout);
             DISP.print(str);
-            DISP.blink({1, 2, 3, 4, 5, 6, 7, 8, 9});
+            DISP.blink({1, 2, 3, 4, 5, 6, 7, 8});
             break;
 #endif
         }

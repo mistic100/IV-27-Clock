@@ -143,7 +143,6 @@ public:
 
     /**
      * Changes the displayed text, optionnally adding dots at specific positions (1-based)
-     * If "str" is longer than NUM_GRIDS it will perform a scroll animation and ignore "dots"
      */
     void print(const String &str, const std::vector<byte> &dots = {})
     {
@@ -151,26 +150,31 @@ public:
 
         Serial.println(str);
 
-        if (str.length() > NUM_GRIDS)
+        for (byte i = 0; i < NUM_GRIDS; i++)
         {
-            this->str = str;
-            scrollOffset = -NUM_GRIDS;
+            this->chars[i] = str[i] ? str[i] : ' ';
         }
-        else
-        {
-            for (byte i = 0; i < NUM_GRIDS; i++)
-            {
-                this->chars[i] = str[i] ? str[i] : ' ';
-            }
 
-            for (const auto &dot : dots)
+        for (const auto &dot : dots)
+        {
+            if (dot >= 1 && dot <= NUM_GRIDS)
             {
-                if (dot >= 1 && dot <= NUM_GRIDS)
-                {
-                    this->dots[dot - 1] = HIGH;
-                }
+                this->dots[dot - 1] = HIGH;
             }
         }
+    }
+
+    /**
+     * Changes the displayed text, with a scroll animation
+     */
+    void printScroll(const String &str)
+    {
+        clear();
+
+        Serial.println(str);
+
+        this->str = str;
+        scrollOffset = -NUM_GRIDS;
     }
 
     /**
@@ -184,14 +188,6 @@ public:
             {
                 blinks[pos - 1] = HIGH;
             }
-        }
-    }
-
-    void blinkAll()
-    {
-        for (byte i = 0; i < NUM_GRIDS; i++)
-        {
-            blinks[i] = HIGH;
         }
     }
 
