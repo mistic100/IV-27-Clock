@@ -60,7 +60,7 @@ std::map<char, std::array<byte, 7>> SEGMENTS_SYM = {
     {'*', {{1, 1, 0, 0, 0, 1, 1}}}, // °
 };
 
-std::array<const char*, 12> MONTHS = {
+std::array<const char *, 12> MONTHS = {
     "JANUARY",
     "FEBRUARY",
     "MARCH",
@@ -72,8 +72,7 @@ std::array<const char*, 12> MONTHS = {
     "SEPTEMBER",
     "OCTOBER",
     "NOVEMBER",
-    "DECEMBER"
-};
+    "DECEMBER"};
 
 class Display
 {
@@ -169,6 +168,11 @@ public:
      */
     void printScroll(const String &str)
     {
+        if (this->str.equals(str))
+        {
+            return;
+        }
+
         clear();
 
         Serial.println(str);

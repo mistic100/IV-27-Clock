@@ -70,13 +70,13 @@ public:
 
 #ifdef USE_HA
         haSensor = new HaSensor();
-#endif
 #ifdef USE_HA_MESSAGE
         messageTimeout = SETTINGS.messageTimeout();
         getMessage();
 #endif
 #ifdef USE_HA_OCCUPANCY
         getOccupancy();
+#endif
 #endif
     }
 
@@ -142,7 +142,6 @@ public:
                 if (messageTimer == 0 && !message.isEmpty())
                 {
                     setMode(DisplayMode::MESSAGE);
-                    show();
                 }
             }
 
@@ -154,7 +153,7 @@ public:
 #endif
 
             // update display
-            if (isMainDisplayMode(mode) && mode != DisplayMode::MESSAGE)
+            if (isMainDisplayMode(mode))
             {
                 show();
             }
