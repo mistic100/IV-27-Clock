@@ -469,6 +469,10 @@ public:
         {
             daytimeStart += 30;
         }
+        else
+        {
+            daytimeStart = 0;
+        }
     }
 
     void incDaytimeEnd()
@@ -476,6 +480,10 @@ public:
         if (daytimeEnd < 23 * 60 + 30)
         {
             daytimeEnd += 30;
+        }
+        else
+        {
+            daytimeEnd = 0;
         }
     }
 
@@ -485,6 +493,10 @@ public:
         {
             daytimeStart -= 30;
         }
+        else
+        {
+            daytimeStart = 23 * 60 + 30;
+        }
     }
 
     void decDaytimeEnd()
@@ -492,6 +504,10 @@ public:
         if (daytimeEnd > 0)
         {
             daytimeEnd -= 30;
+        }
+        else
+        {
+            daytimeEnd = 23 * 60 + 30;
         }
     }
 
@@ -598,11 +614,14 @@ private:
         }
 #endif
 
-        uint16_t timeInMinutes = dateTime.hour() * 60 + dateTime.minute();
-        if (timeInMinutes < daytimeStart || timeInMinutes >= daytimeEnd)
+        if (daytimeEnd > daytimeStart)
         {
-            off();
-            return;
+            uint16_t timeInMinutes = dateTime.hour() * 60 + dateTime.minute();
+            if (timeInMinutes < daytimeStart || timeInMinutes >= daytimeEnd)
+            {
+                off();
+                return;
+            }
         }
 
         on();
