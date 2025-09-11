@@ -313,7 +313,7 @@ public:
             }
             else
             {
-                sprintf(str, "% 2d %s", dateTime.day(), MONTHS[dateTime.month() - 1]);
+                sprintf(str, "%2d %s", dateTime.day(), MONTHS[dateTime.month() - 1]);
             }
             DISP.print(str);
             break;
