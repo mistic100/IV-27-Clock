@@ -2,6 +2,11 @@
 
 #include "constants.hpp"
 
+struct HaData {
+    bool atHome = false;
+    String message;
+};
+
 enum class DisplayMode
 {
     OFF,

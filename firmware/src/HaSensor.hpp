@@ -19,44 +19,32 @@ private:
     JsonDocument doc;
 
 public:
-    const String getMessage()
+    const void update(HaData &data)
     {
         ESP_LOGI(TAG_HA, "Update message");
 
         http.useHTTP10(true);
-        http.begin(client, HA_URL + HA_SENSOR_MESSAGE);
+        http.begin(client, HA_URL + HA_SENSOR);
         http.addHeader("Authorization", HA_TOKEN);
         http.GET();
 
         doc.clear();
         deserializeJson(doc, http.getStream());
 
-        String message = doc["state"].as<String>();
+        #ifdef USE_HA_OCCUPANCY
+        data.atHome = doc["attributes"]["at_home"].as<bool>();
+        #endif
+        #ifdef USE_HA_MESSAGE
+        data.message = doc["attributes"]["message"].as<String>();
+        #endif
 
         http.end();
 
-        ESP_LOGI(TAG_HA, "Message: %s", message.c_str());
-
-        return message;
-    }
-
-    const bool getOccupancy() {
-        ESP_LOGI(TAG_HA, "Update occupancy");
-
-        http.useHTTP10(true);
-        http.begin(client, HA_URL + HA_SENSOR_ZONE);
-        http.addHeader("Authorization", HA_TOKEN);
-        http.GET();
-
-        doc.clear();
-        deserializeJson(doc, http.getStream());
-
-        uint8_t occupancy = doc["state"].as<uint8_t>();
-
-        http.end();
-
-        ESP_LOGI(TAG_HA, "Occupancy: %d", occupancy);
-
-        return occupancy > 0;
+        #ifdef USE_HA_OCCUPANCY
+        ESP_LOGI(TAG_HA, "At home: %d", data.atHome);
+        #endif
+        #ifdef USE_HA_MESSAGE
+        ESP_LOGI(TAG_HA, "Message: %s", data.message.c_str());
+        #endif
     }
 };

@@ -20,25 +20,25 @@ class Controller
 private:
 #ifdef USE_TEMP_SENSOR
     Adafruit_BME280 *bme280;
+    float temp;
+    float humi;
+    float tempOffset;
 #endif
 #ifdef USE_HA
     HaSensor *haSensor;
+    HaData haData;
+#ifdef USE_HA_MESSAGE
+    uint8_t messageTimeout;
+    uint8_t messageTimer = 0;
+#endif
 #endif
 
     uint16_t daytimeStart;
     uint16_t daytimeEnd;
-    uint8_t messageTimeout;
-    float tempOffset;
     DateFormat dateFormat;
-
-    float temp;
-    float humi;
-    bool occupancy = true;
-    String message;
 
     bool forceOff = false;
     bool forceOn = false;
-    uint8_t messageTimer = 0;
 
 public:
     DateTimeWrapper dateTime;
@@ -70,12 +70,9 @@ public:
 
 #ifdef USE_HA
         haSensor = new HaSensor();
+        haSensor->update(haData);
 #ifdef USE_HA_MESSAGE
         messageTimeout = SETTINGS.messageTimeout();
-        getMessage();
-#endif
-#ifdef USE_HA_OCCUPANCY
-        getOccupancy();
 #endif
 #endif
     }
@@ -86,12 +83,7 @@ public:
         // update Home Assistant data
         EVERY_N_SECONDS(HA_UPDATE_INTERVAL_S)
         {
-#ifdef USE_HA_MESSAGE
-            getMessage();
-#endif
-#ifdef USE_HA_OCCUPANCY
-            getOccupancy();
-#endif
+            haSensor->update(haData);
         }
 #endif
 
@@ -139,14 +131,14 @@ public:
                     messageTimer--;
                 }
 
-                if (messageTimer == 0 && !message.isEmpty())
+                if (messageTimer == 0 && !haData.message.isEmpty())
                 {
                     setMode(DisplayMode::MESSAGE);
                 }
             }
 
             // return to time if there is not more message
-            if (mode == DisplayMode::MESSAGE && message.isEmpty())
+            if (mode == DisplayMode::MESSAGE && haData.message.isEmpty())
             {
                 setMode(defaultMode);
             }
@@ -194,7 +186,7 @@ public:
                 LIGHT.on();
 
 #ifdef USE_HA_MESSAGE
-                if (!message.isEmpty())
+                if (!haData.message.isEmpty())
                 {
                     setMode(DisplayMode::MESSAGE);
                 }
@@ -224,18 +216,25 @@ public:
         }
 
         ++mode;
-        if (mode == DisplayMode::MESSAGE && message.isEmpty())
+        #ifdef USE_HA_MESSAGE
+        if (mode == DisplayMode::MESSAGE && haData.message.isEmpty())
         {
             ++mode;
         }
+        #endif
 
         setMode(mode);
 
+        #ifdef USE_HA_MESSAGE
         if (mode != DisplayMode::MESSAGE)
         {
             defaultMode = mode;
             SETTINGS.setDisplayMode(mode);
         }
+        #else
+        defaultMode = mode;
+        SETTINGS.setDisplayMode(mode);
+        #endif
     }
 
     /**
@@ -250,18 +249,25 @@ public:
         }
 
         --mode;
-        if (mode == DisplayMode::MESSAGE && message.isEmpty())
+        #ifdef USE_HA_MESSAGE
+        if (mode == DisplayMode::MESSAGE && haData.message.isEmpty())
         {
             --mode;
         }
+        #endif
 
         setMode(mode);
 
+        #ifdef USE_HA_MESSAGE
         if (mode != DisplayMode::MESSAGE)
         {
             defaultMode = mode;
             SETTINGS.setDisplayMode(mode);
         }
+        #else
+        defaultMode = mode;
+        SETTINGS.setDisplayMode(mode);
+        #endif
     }
 
     // change the display mode
@@ -320,7 +326,7 @@ public:
 
 #ifdef USE_HA_MESSAGE
         case DisplayMode::MESSAGE:
-            DISP.printScroll(message);
+            DISP.printScroll(haData.message);
             break;
 #endif
 
@@ -581,20 +587,6 @@ private:
     }
 #endif
 
-#ifdef USE_HA_MESSAGE
-    void getMessage()
-    {
-        message = haSensor->getMessage();
-    }
-#endif
-
-#ifdef USE_HA_OCCUPANCY
-    void getOccupancy()
-    {
-        occupancy = haSensor->getOccupancy();
-    }
-#endif
-
     // if in menus : do nothing
     // if occupancy=false : turn off
     // if not daytime : turn off
@@ -607,7 +599,7 @@ private:
         }
 
 #ifdef USE_HA_OCCUPANCY
-        if (!occupancy)
+        if (!haData.atHome)
         {
             off();
             return;

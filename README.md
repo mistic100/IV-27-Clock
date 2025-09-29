@@ -76,7 +76,9 @@ Menu content :
 
 ### Home Assistant
 
-Add a custom sensor whose state value is the message to display on the clock (only letters, numbers, `.` and `-` symbols).
+Add a custom binary sensor with the following attributes:
+- `at_home: "{{ states('zone.home') | int(default=0) > 0 }}"`
+- `message`: the message to display (only letters, numbers, `.` and `-` symbols)
 
 **Example (extracting next due item from a todo list):**
 ```yaml
@@ -96,8 +98,15 @@ template:
         state: >
             {% set tdate = (now().date() + timedelta(days=1)) | string %}
             {{ items['todo.my_list']['items'] 
-				| selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
-				| map(attribute='summary') | first() | truncate(255) }}
+				     | selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
+				     | map(attribute='summary') | first() | truncate(255) }}
+
+  - binary_sensor:
+    - unique_id: data_for_iv27_clock
+      state: true
+      attributes:
+        at_home: "{{ states('zone.home') | int(default=0) > 0 }}"
+        message: "{{ states('sensor.todo_message') }}"
 ```
 
 ### Firmware
@@ -106,7 +115,7 @@ Copy `secrets.tpl.h` into `secrets.h` and fill the values.
 
 - `HA_TOKEN`: go to your HA profile page, then Security, and create a new Long lived token at the bottom of the page (keep the `Bearer ` prefix)
 - `HA_URL`: fill in your HA hostname
-- `HA_SENSOR_MESSAGE`: set the id of the sensor created above
+- `HA_SENSOR`: set the id of the sensor created above
 - `OTA_PASS`: choose a password to secure the Wifi OTA update
 
 Copy `upload_params.tpl.ini` into `upload_params.ini` and fill the OTA password.
