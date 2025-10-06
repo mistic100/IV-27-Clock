@@ -83,9 +83,14 @@ Add a custom binary sensor with the following attributes:
 **Example (extracting next due item from a todo list):**
 ```yaml
 template:
-  - trigger:
-      - platform: state
-        entity_id: todo.my_list
+  - triggers:
+      - trigger: state
+        entity_id:
+          - todo.my_list
+          - zone.home
+        # scheduler to handle item status change
+      - trigger: time_pattern
+        minutes: "/5"
     action:
       - service: todo.get_items
         data:
@@ -93,20 +98,16 @@ template:
         target:
           entity_id: todo.my_list
         response_variable: items
-    sensor:
-      - unique_id: todo_message
-        state: >
+    binary_sensor:
+      - unique_id: data_for_iv27_clock
+        state: true
+        attributes:
+          at_home: "{{ states('zone.home') | int(default=0) > 0 }}"
+          message: >
             {% set tdate = (now().date() + timedelta(days=1)) | string %}
             {{ items['todo.my_list']['items'] 
-				     | selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
-				     | map(attribute='summary') | first() | truncate(255) }}
-
-  - binary_sensor:
-    - unique_id: data_for_iv27_clock
-      state: true
-      attributes:
-        at_home: "{{ states('zone.home') | int(default=0) > 0 }}"
-        message: "{{ states('sensor.todo_message') }}"
+              | selectattr('due', 'defined') | selectattr('due', 'lt', tdate) 
+              | map(attribute='summary') | first() | truncate(255) }}
 ```
 
 ### Firmware
